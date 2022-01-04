@@ -1,0 +1,13 @@
+*.log
+*.bak
+/vendor
+.DS_Store
+composer.phar
+/tmp/*
+!/tmp/.gitkeep
+/src/languages/
+node_modules
+*.jpg
+*.png
+.env
+src/react-frontend/build/**
