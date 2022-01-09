@@ -208,13 +208,14 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
     public function api_bulk_sisa($request)
     {
-        // $this::write_log($request);
 
         $params = $request->get_query_params();
 
         $now = time();
-        if (isset($params['start']) && is_int($params['start'])) {
-            $now = $params['start'];
+        $start = isset($params['start']) ? $params['start'] : false;
+
+        if (isset($start) && (string)(int)$start == $start && strlen($start) > 9) {
+            $now = (int) $start;
         }
 
         $posts_per_page = 5;
@@ -235,7 +236,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
         $query = new WP_Query($args);
 
-        if (!isset($params['start'])) {
+        if ($start === false) {
             return new WP_REST_RESPONSE(array(
                 'success' => true,
                 'body' => array(
@@ -266,7 +267,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $annotation_data['thumbnail'] = wp_get_attachment_image_url($p);
 
             $image_file_path = $this->get_filepath($p);
-            error_log('image file path: ' . $image_file_path);
+
             if ($image_file_path === false) {
                 $response[] = new WP_Error('bad_image', 'image filepath not found');
                 continue;
@@ -327,51 +328,56 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     public function clean_up_gcv_data($data)
     {
         $cleaned_data = array();
+        $min_score = 0.6;
 
         if (isset($data->landmarkAnnotations) && !empty($data->landmarkAnnotations)) {
-
-            $landmark['description'] = $data->landmarkAnnotations[0]->description;
-            $landmark['score'] = $data->landmarkAnnotations[0]->score;
-            $cleaned_data['landmark'] = $landmark;
+            if ($data->landmarkAnnotations[0]->score >= $min_score) {
+                $cleaned_data['landmark'] = $data->landmarkAnnotations[0]->description;
+            }
         }
         if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
             $labels = array();
             foreach ($data->labelAnnotations as $label) {
-                $labels[] = array('description' => $label->description, 'score' => $label->score);
+                if ($label->score >= $min_score) {
+                    $labels[] = $label->description;
+                }
             }
-            $cleaned_data['labels'] = $labels;
+            $cleaned_data['labels'] = array_values(array_unique($labels));
         }
         if (isset($data->webDetection) && !empty($data->webDetection)) {
             $web_entities = array();
             foreach ($data->webDetection->webEntities as $entity) {
-                if (isset($entity->description))
-                    $web_entities[] = array('description' => $entity->description, 'score' => $entity->score);
+                if (isset($entity->description) && $entity->score >= $min_score)
+                    $web_entities[] = $entity->description;
             }
-            $cleaned_data['webEntities'] = $web_entities;
+            $cleaned_data['webEntities'] = array_values(array_unique($web_entities));
             if (isset($data->webDetection->bestGuessLabels) && !empty($data->webDetection->bestGuessLabels)) {
                 $web_labels = array();
                 foreach ($data->webDetection->bestGuessLabels as $web_label) {
-                    error_log(print_r($web_label, true));
                     if (isset($web_label->label)) {
                         $web_labels[] = $web_label->label;
                     }
                 }
-                $cleaned_data['webLabels'] = $web_labels;
+                $cleaned_data['webLabels'] = array_values(array_unique($web_labels));
             }
         }
         if (isset($data->localizedObjectAnnotations) && !empty($data->localizedObjectAnnotations)) {
             $objects = array();
             foreach ($data->localizedObjectAnnotations as $object) {
-                $objects[] = array('description' => $object->name, 'score' => $object->score);
+                if ($object->score >= $min_score) {
+                    $objects[] = $object->name;
+                }
             }
-            $cleaned_data['objects'] = $objects;
+            $cleaned_data['objects'] =  array_values(array_unique($objects));
         }
         if (isset($data->logoAnnotations) && !empty($data->logoAnnotations)) {
             $logos = array();
             foreach ($data->logoAnnotations as $logo) {
-                $logos[] = array('description' => $logo->description, 'score' => $logo->score);
+                if ($logo->score >= $min_score) {
+                    $logos[] = $logo->description;
+                }
             }
-            $cleaned_data['logos'] = $logos;
+            $cleaned_data['logos'] = array_values(array_unique($logos));
         }
         if (isset($data->textAnnotations) && !empty($data->textAnnotations)) {
             $text = $data->textAnnotations[0]->description;
