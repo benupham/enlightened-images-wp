@@ -276,11 +276,15 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
             if (is_wp_error($gcv_result)) {
                 ++$errors;
-            } else {
-                $this->update_attachment_meta($gcv_result);
+                $annotation_data['gcv_data'] = $gcv_result;
+                $response[] = $annotation_data;
+                continue;
             }
 
-            $annotation_data['gcv_data'] = $gcv_result;
+            $cleaned_data = $this->clean_up_gcv_data($gcv_result);
+            $this->update_attachment_meta($cleaned_data);
+
+            $annotation_data['gcv_data'] = $cleaned_data;
 
             $response[] = $annotation_data;
         }
@@ -318,6 +322,58 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         $name = end($path_parts);
         $filename = $path_prefix . $name;
         return $filename;
+    }
+
+    public function clean_up_gcv_data($data)
+    {
+        $cleaned_data = array();
+
+        if (isset($data->landmarkAnnotations)) {
+
+            $landmark['description'] = $data->landmarkAnnotations[0]->description;
+            $landmark['score'] = $data->landmarkAnnotations[0]->score;
+            $cleaned_data['landmark'] = $landmark;
+        }
+        if (isset($data->labelAnnotations)) {
+            $labels = array();
+            foreach ($data->labelAnnotations as $label) {
+                $labels[] = array('description' => $label->description, 'score' => $label->score);
+            }
+            $cleaned_data['labels'] = $labels;
+        }
+        if (isset($data->webDetection)) {
+            $web_entities = array();
+            foreach ($data->webDetection->webEntities as $entity) {
+                if (isset($entity->description))
+                    $web_entities[] = array('description' => $entity->description, 'score' => $entity->score);
+            }
+            $cleaned_data['webEntities'] = $web_entities;
+            if ($data->webDetection->bestGuessLabels) {
+                foreach ($data->webDetection->bestGuessLabels as $web_label) {
+                    $web_labels[] = $web_label->label;
+                }
+                $cleaned_data['webLabels'] = $web_labels;
+            }
+        }
+        if (isset($data->localizedObjectAnnotations)) {
+            $objects = array();
+            foreach ($data->localizedObjectAnnotations as $object) {
+                $objects[] = array('description' => $object->name, 'score' => $object->score);
+            }
+            $cleaned_data['objects'] = $objects;
+        }
+        if (isset($data->logoAnnotations)) {
+            $logos = array();
+            foreach ($data->logoAnnotations as $logo) {
+                $logos[] = array('description' => $logo->description, 'score' => $logo->score);
+            }
+            $cleaned_data['logos'] = $logos;
+        }
+        if (isset($data->textAnnotations)) {
+            $text = $data->textAnnotations[0]->description;
+            $cleaned_data['text'] = $text;
+        }
+        return $cleaned_data;
     }
 
     public function update_attachment_meta($data)

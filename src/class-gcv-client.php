@@ -16,11 +16,7 @@ class SmartImageSearch_GCV_Client
                     'features' => array(
                         array(
                             'maxResults' => 10,
-                            'type' => 'FACE_DETECTION',
-                        ),
-                        array(
-                            'maxResults' => 10,
-                            'type' => 'DOCUMENT_TEXT_DETECTION'
+                            'type' => 'LANDMARK_DETECTION'
                         ),
                         array(
                             'maxResults' => 10,
@@ -38,10 +34,19 @@ class SmartImageSearch_GCV_Client
                             'maxResults' => 10,
                             'type' => 'LABEL_DETECTION'
                         ),
+                        array(
+                            'maxResults' => 10,
+                            'type' => 'LOGO_DETECTION'
+                        ),
                     ),
                     'image' => array(
                         'content' => $data,
                     ),
+                    'imageContext' => array(
+                        'webDetectionParams' => array(
+                            'includeGeoResults' => true
+                        )
+                    )
                 ),
             ),
         );
