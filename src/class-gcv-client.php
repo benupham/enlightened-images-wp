@@ -3,36 +3,32 @@
 class GCV_Client
 {
 
-    public function get_crop_hint($original_file, $size)
+    public function get_annotation($original_file)
     {
 
-        $width = $size->dimensions['width'];
-        $height = $size->dimensions['height'];
-        $aspect_ratio = $width / $height;
         $img = file_get_contents($original_file);
         $data = base64_encode($img);
         $baseurl = 'https://vision.googleapis.com/v1/images:annotate';
-        $apikey = get_option('smartcropai_api_key');
+        $apikey = get_option('smartimagesearch_api_key');
         $body = array(
             'requests' => array(
                 array(
                     'features' => array(
                         array(
-                            'type' => 'CROP_HINTS',
+                            'maxResult' => 10,
+                            'type' => 'FACE_DETECTION',
                         ),
                         array(
-                            'type' => 'FACE_DETECTION',
+                            'maxResult' => 10,
+                            'type' => 'OBJECT_LOCALIZATION'
+                        ),
+                        array(
+                            'maxResult' => 50,
+                            'type' => 'DOCUMENT_TEXT_DETECTION'
                         ),
                     ),
                     'image' => array(
                         'content' => $data,
-                    ),
-                    'imageContext' => array(
-                        'cropHintsParams' => array(
-                            'aspectRatios' => array(
-                                $aspect_ratio,
-                            ),
-                        ),
                     ),
                 ),
             ),
@@ -63,9 +59,7 @@ class GCV_Client
         } elseif (200 != $response_code) {
             return new WP_Error($response_code, "Uknown error", $data);
         } else {
-
-            $vertices = $data->responses[0]->cropHintsAnnotation->cropHints[0]->boundingPoly->vertices;
-            return $vertices;
+            return $data->responses[0];
         }
     }
 }

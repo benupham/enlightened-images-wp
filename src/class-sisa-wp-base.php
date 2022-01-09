@@ -1,9 +1,9 @@
 <?php
 
-abstract class SmartCrop_WP_Base
+abstract class SmartImageSearch_WP_Base
 {
-    const NAME = 'smartcrop-images';
-    const PREFIX = 'smartcropai';
+    const NAME = 'smart-image-search-ai';
+    const PREFIX = 'smartimagesearch';
 
     private static $wp_version;
 
@@ -56,14 +56,6 @@ abstract class SmartCrop_WP_Base
     }
 
     public function init()
-    {
-    }
-
-    public function xmlrpc_init()
-    {
-    }
-
-    public function ajax_init()
     {
     }
 

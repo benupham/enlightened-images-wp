@@ -1,6 +1,6 @@
 <?php
 
-class SmartCrop_Image_Size
+class SSmartImageSearch_Image_Size
 {
     public $filename;
     public $dimensions;
