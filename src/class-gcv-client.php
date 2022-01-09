@@ -1,6 +1,6 @@
 <?php
 
-class GCV_Client
+class SmartImageSearch_GCV_Client
 {
 
     public function get_annotation($original_file)
@@ -9,22 +9,34 @@ class GCV_Client
         $img = file_get_contents($original_file);
         $data = base64_encode($img);
         $baseurl = 'https://vision.googleapis.com/v1/images:annotate';
-        $apikey = get_option('smartimagesearch_api_key');
+        $apikey = get_option('smartcropai_api_key');
         $body = array(
             'requests' => array(
                 array(
                     'features' => array(
                         array(
-                            'maxResult' => 10,
+                            'maxResults' => 10,
                             'type' => 'FACE_DETECTION',
                         ),
                         array(
-                            'maxResult' => 10,
+                            'maxResults' => 10,
+                            'type' => 'DOCUMENT_TEXT_DETECTION'
+                        ),
+                        array(
+                            'maxResults' => 10,
+                            'type' => 'TEXT_DETECTION'
+                        ),
+                        array(
+                            'maxResults' => 10,
                             'type' => 'OBJECT_LOCALIZATION'
                         ),
                         array(
-                            'maxResult' => 50,
-                            'type' => 'DOCUMENT_TEXT_DETECTION'
+                            'maxResults' => 10,
+                            'type' => 'WEB_DETECTION'
+                        ),
+                        array(
+                            'maxResults' => 10,
+                            'type' => 'LABEL_DETECTION'
                         ),
                     ),
                     'image' => array(
@@ -46,6 +58,7 @@ class GCV_Client
         }
 
         $data = json_decode(wp_remote_retrieve_body($request));
+
         if (isset($data->error)) {
             $response_code = $data->error->code;
             $response_message = $data->error->message;

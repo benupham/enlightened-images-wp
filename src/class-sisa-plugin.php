@@ -143,7 +143,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             // By using this constant we ensure that when the WP_REST_Server changes our readable endpoints will work as intended.
             'methods' => WP_REST_Server::READABLE,
             'callback' => $this->get_method('api_bulk_sisa'),
-            'permission_callback' => $this->get_method('sisa_proxy_permissions_check'),
+            // 'permission_callback' => $this->get_method('sisa_proxy_permissions_check'),
         ));
         register_rest_route('smartimagesearch/v1', '/settings', array(
             'methods' => WP_REST_Server::READABLE,
@@ -210,47 +210,72 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     {
         // $this::write_log($request);
 
-        if (!$request->get_query_params()) {
-            return new WP_REST_RESPONSE(array(
-                'success' => false,
-                'error' => 'No query parameters',
-            ), 400);
-        }
-
         $params = $request->get_query_params();
 
-        if ((!isset($params['page'])) || ($params['page'] === 0)) {
-
-            return $this->prep_bulk();
+        $now = time();
+        if (isset($params['start']) && is_int($params['start'])) {
+            $now = $params['start'];
         }
 
-        $options = get_option('sisa_bulk_options');
+        $posts_per_page = 5;
 
-        $offset = $params['page'] - 1;
-        $ids = $options['sisa_bulk_ids'];
-        $remaining = $options['sisa_bulk_count'];
-        $errors = $options['sisa_bulk_errors'];
-        $paged_ids = array_slice($ids, $offset * 10, 10);
+        $args = array(
+            'post_type' => 'attachment',
+            'post_status' => 'inherit',
+            'paged' => 1,
+            'posts_per_page' => $posts_per_page,
+            'date_query' => array(
+                'before' => date('Y-m-d H:i:s', $now),
+            ),
+            'meta_key' => 'smartimagesearch',
+            'meta_compare' => 'NOT EXISTS', //this may not work
+            'post_mime_type' => array('image/jpeg', 'image/gif', 'image/png', 'image/bmp'),
+            'fields' => 'ids'
+        );
 
-        if (empty($paged_ids)) {
-            return array('message' => 'All done.');
+        $query = new WP_Query($args);
+
+        if (!isset($params['start'])) {
+            return new WP_REST_RESPONSE(array(
+                'success' => true,
+                'body' => array(
+                    'count' => $query->found_posts,
+                    'errors' => 0,
+                    'start' => $now,
+                ),
+            ), 200);
+        }
+
+        if (!$query->have_posts()) {
+            return new WP_REST_RESPONSE(array(
+                'success' => true,
+                'body' => array(
+                    'image_data' => array(),
+                    'status' => 'no images need annotation.'
+                ),
+            ), 200);
         }
 
         $response = array();
+        $errors = 0;
 
-        foreach ($paged_ids as $post_id) {
+        foreach ($query->posts as $p) {
 
             $annotation_data = array();
 
-            $annotation_data['thumbnail'] = wp_get_attachment_image_url($post_id);
-            $image_file_path = get_attached_file($post_id);
-            error_log('image file path: ' . $image_file_path);
+            $annotation_data['thumbnail'] = wp_get_attachment_image_url($p);
 
-            $gcv_client = new GCV_Client();
+            $image_file_path = $this->get_filepath($p);
+            error_log('image file path: ' . $image_file_path);
+            if ($image_file_path === false) {
+                $response[] = new WP_Error('bad_image', 'image filepath not found');
+                continue;
+            }
+            $gcv_client = new SmartImageSearch_GCV_Client();
             $gcv_result = $gcv_client->get_annotation($image_file_path);
 
-            if (is_wp_error($gcv_client)) {
-                $errors++;
+            if (is_wp_error($gcv_result)) {
+                ++$errors;
             } else {
                 $this->update_attachment_meta($gcv_result);
             }
@@ -258,21 +283,14 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $annotation_data['gcv_data'] = $gcv_result;
 
             $response[] = $annotation_data;
-            $remaining--;
         }
-
-        $options['sisa_bulk_count'] = $remaining;
-        $options['sisa_bulk_errors'] = $errors;
-
-        update_option('sisa_bulk_options', $options);
 
         $response = new WP_REST_RESPONSE(array(
             'success' => true,
             'body' => array(
                 'image_data' => $response,
-                'count' => $remaining,
+                'count' => $query->found_posts - count($query->posts),
                 'errors' => $errors,
-                'next_page' => $params['page'] + 1,
             ),
         ), 200);
 
@@ -281,51 +299,25 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $response;
     }
 
-    public function prep_bulk()
+    public function get_filepath($p)
     {
-        $now = time();
+        $wp_metadata = wp_get_attachment_metadata($p);
+        if (!is_array($wp_metadata) || !isset($wp_metadata['file'])) {
+            return false;
+        }
+        $upload_dir = wp_upload_dir();
+        $path_prefix = $upload_dir['basedir'] . '/';
+        $path_info = pathinfo($wp_metadata['file']);
+        if (isset($path_info['dirname'])) {
+            $path_prefix .= $path_info['dirname'] . '/';
+        }
 
-        $args = array(
-            'post_type' => 'attachment',
-            'posts_per_page' => -1,
-            'date_query' => array(
-                'before' => date('Y-m-d H:i:s', $now),
-            ),
-            'meta_key' => 'smartimagesearch',
-            'meta_compare' => 'NOT EXISTS', //this may not work
-            'post_mime_type' => array('image/jpeg', 'image/gif', 'image/png', 'image/bmp'),
-        );
-
-        $query = new WP_Query($args);
-
-        $unannotated_count = $query->found_posts;
-
-        $query_ids = wp_list_pluck($query->posts, 'ID');
-        $this::write_log($query_ids);
-
-        $errors = 0;
-
-        $bulk_options = array(
-            'sisa_bulk_start' => $now,
-            'sisa_bulk_errors' => $errors,
-            'sisa_bulk_count' => $unannotated_count,
-            'sisa_bulk_ids' => $query_ids,
-        );
-        update_option('sisa_bulk_options', $bulk_options);
-
-        $response = new WP_REST_RESPONSE(array(
-            'success' => true,
-            'body' => array(
-                'count' => $unannotated_count,
-                'errors' => $errors,
-                'start' => $now,
-                'next_page' => 1,
-            ),
-        ), 200);
-
-        $response->set_headers(array('Cache-Control' => 'no-cache'));
-
-        return $response;
+        /* Do not use pathinfo for getting the filename.
+        It doesn't work when the filename starts with a special character. */
+        $path_parts = explode('/', $wp_metadata['file']);
+        $name = end($path_parts);
+        $filename = $path_prefix . $name;
+        return $filename;
     }
 
     public function update_attachment_meta($data)
