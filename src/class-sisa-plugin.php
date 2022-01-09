@@ -328,48 +328,52 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     {
         $cleaned_data = array();
 
-        if (isset($data->landmarkAnnotations)) {
+        if (isset($data->landmarkAnnotations) && !empty($data->landmarkAnnotations)) {
 
             $landmark['description'] = $data->landmarkAnnotations[0]->description;
             $landmark['score'] = $data->landmarkAnnotations[0]->score;
             $cleaned_data['landmark'] = $landmark;
         }
-        if (isset($data->labelAnnotations)) {
+        if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
             $labels = array();
             foreach ($data->labelAnnotations as $label) {
                 $labels[] = array('description' => $label->description, 'score' => $label->score);
             }
             $cleaned_data['labels'] = $labels;
         }
-        if (isset($data->webDetection)) {
+        if (isset($data->webDetection) && !empty($data->webDetection)) {
             $web_entities = array();
             foreach ($data->webDetection->webEntities as $entity) {
                 if (isset($entity->description))
                     $web_entities[] = array('description' => $entity->description, 'score' => $entity->score);
             }
             $cleaned_data['webEntities'] = $web_entities;
-            if ($data->webDetection->bestGuessLabels) {
+            if (isset($data->webDetection->bestGuessLabels) && !empty($data->webDetection->bestGuessLabels)) {
+                $web_labels = array();
                 foreach ($data->webDetection->bestGuessLabels as $web_label) {
-                    $web_labels[] = $web_label->label;
+                    error_log(print_r($web_label, true));
+                    if (isset($web_label->label)) {
+                        $web_labels[] = $web_label->label;
+                    }
                 }
                 $cleaned_data['webLabels'] = $web_labels;
             }
         }
-        if (isset($data->localizedObjectAnnotations)) {
+        if (isset($data->localizedObjectAnnotations) && !empty($data->localizedObjectAnnotations)) {
             $objects = array();
             foreach ($data->localizedObjectAnnotations as $object) {
                 $objects[] = array('description' => $object->name, 'score' => $object->score);
             }
             $cleaned_data['objects'] = $objects;
         }
-        if (isset($data->logoAnnotations)) {
+        if (isset($data->logoAnnotations) && !empty($data->logoAnnotations)) {
             $logos = array();
             foreach ($data->logoAnnotations as $logo) {
                 $logos[] = array('description' => $logo->description, 'score' => $logo->score);
             }
             $cleaned_data['logos'] = $logos;
         }
-        if (isset($data->textAnnotations)) {
+        if (isset($data->textAnnotations) && !empty($data->textAnnotations)) {
             $text = $data->textAnnotations[0]->description;
             $cleaned_data['text'] = $text;
         }
