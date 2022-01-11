@@ -47,6 +47,9 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         // Add a smartimagesearch link to actions list in the media list view.
         // add_filter('media_row_actions', array($this, 'add_sisa_link_to_media_list_view'), 10, 2);
 
+        // Filter media library search to include smartsearch meta values
+        add_filter('ajax_query_attachments_args', array($this, 'filter_media_search'), 10, 1);
+
         // add_action(
         //     'admin_enqueue_scripts',
         //     $this->get_method('enqueue_scripts')
@@ -212,8 +215,8 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         $params = $request->get_query_params();
 
         $now = time();
-        $start = isset($params['start']) ? $params['start'] : false;
-
+        $start = !empty($params['start']) ? $params['start'] : false;
+        error_log($start);
         if (isset($start) && (string)(int)$start == $start && strlen($start) > 9) {
             $now = (int) $start;
         }
@@ -283,9 +286,17 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             }
 
             $cleaned_data = $this->clean_up_gcv_data($gcv_result);
-            $this->update_attachment_meta($cleaned_data);
+            $alt = $this->update_image_alt_text($cleaned_data, $p, true);
+            $meta = $this->update_attachment_meta($cleaned_data, $p);
 
             $annotation_data['gcv_data'] = $cleaned_data;
+
+            if (is_wp_error($alt) || is_wp_error($meta)) {
+                ++$errors;
+            }
+
+            $annotation_data['alt_text'] = $alt;
+            $annotation_data['smartsearch_meta'] = $meta;
 
             $response[] = $annotation_data;
         }
@@ -339,7 +350,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $labels = array();
             foreach ($data->labelAnnotations as $label) {
                 if ($label->score >= $min_score) {
-                    $labels[] = $label->description;
+                    $labels[] = strtolower($label->description);
                 }
             }
             $cleaned_data['labels'] = array_values(array_unique($labels));
@@ -348,7 +359,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $web_entities = array();
             foreach ($data->webDetection->webEntities as $entity) {
                 if (isset($entity->description) && $entity->score >= $min_score)
-                    $web_entities[] = $entity->description;
+                    $web_entities[] = strtolower($entity->description);
             }
             $cleaned_data['webEntities'] = array_values(array_unique($web_entities));
             if (isset($data->webDetection->bestGuessLabels) && !empty($data->webDetection->bestGuessLabels)) {
@@ -365,7 +376,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $objects = array();
             foreach ($data->localizedObjectAnnotations as $object) {
                 if ($object->score >= $min_score) {
-                    $objects[] = $object->name;
+                    $objects[] = strtolower($object->name);
                 }
             }
             $cleaned_data['objects'] =  array_values(array_unique($objects));
@@ -386,20 +397,68 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $cleaned_data;
     }
 
-    public function update_attachment_meta($data)
+    public function update_attachment_meta($cleaned_data, $p)
     {
-        // check for wp error
-        // group different data
-        // convert to arrays
-        // determine best alt text
-        // save alt text (if desired)
-        // remove duplicates in arrays
-        // remove duplicates between arrays
+        $sisa_meta = array();
+        foreach ($cleaned_data as $value) {
+            if (is_array($value) && !empty($value)) {
+                $sisa_meta = array_merge($sisa_meta, $value);
+            }
+            if (is_string($value) && !empty($value)) {
+                $sisa_meta[] = $value;
+            }
+        }
+        $sisa_meta = array_unique($sisa_meta);
+        $sisa_meta_string = implode(' ', $sisa_meta);
+        error_log($sisa_meta_string);
+        $success = update_post_meta($p, 'smartimagesearch', $sisa_meta_string);
 
+        if (false === $success) {
+            return new WP_Error(500, 'Failed to update or matching meta already exists.', $sisa_meta_string);
+        }
+        return $sisa_meta_string;
     }
 
-    public function create_image_alt_text($data)
+    public function update_image_alt_text($cleaned_data, $p, $save_alt)
     {
+        $success = true;
+        $alt = '';
+        if ($save_alt === true) {
+            if (is_array($cleaned_data['webLabels']) && !empty($cleaned_data['webLabels'][0])) {
+                $success = update_post_meta($p, '_wp_attachment_image_alt', $cleaned_data['webLabels'][0]);
+                $alt = $cleaned_data['webLabels'][0];
+            } elseif (is_array($cleaned_data['webEntities']) && !empty($cleaned_data['webEntities'][0])) {
+                $success = update_post_meta($p, '_wp_attachment_image_alt', $cleaned_data['webEntities'][0]);
+                $alt = $cleaned_data['webEntities'][0];
+            } else {
+                $success = update_post_meta($p, '_wp_attachment_image_alt', $cleaned_data['objects'][0]);
+                $alt = $cleaned_data['objects'][0];
+            }
+        }
+
+        if (false === $success) {
+            return new WP_Error(500, 'Failed to update or matching alt text already exists.', $alt);
+        }
+        return $alt;
+    }
+
+    public function filter_media_search($query = array())
+    {
+        return $query;
+
+        $search = $query['s'];
+        if (empty($search)) return $query;
+        $meta_query = array(
+            'meta_query' => array(
+                'key' => 'smartimagesearch',
+                'value' => $search,
+                'compare' => 'LIKE'
+            )
+        );
+        unset($query['s']);
+        $query['meta_query'] = $meta_query;
+        error_log(print_r($query, true));
+        return $query;
     }
 
     public function enqueue_scripts($hook)
