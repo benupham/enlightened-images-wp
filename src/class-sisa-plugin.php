@@ -48,8 +48,8 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         // add_filter('media_row_actions', array($this, 'add_sisa_link_to_media_list_view'), 10, 2);
 
         // Filter media library search to include smartsearch meta values
-        add_filter('ajax_query_attachments_args', array($this, 'filter_media_search'), 10, 1);
-
+        // add_filter('ajax_query_attachments_args', array($this, 'filter_media_search'), 10, 1);
+        add_action('pre_get_posts', array($this, 'filter_media_search'), 10, 1);
         // add_action(
         //     'admin_enqueue_scripts',
         //     $this->get_method('enqueue_scripts')
@@ -442,23 +442,35 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $alt;
     }
 
-    public function filter_media_search($query = array())
+    public function filter_media_search($query)
     {
-        return $query;
+        // return $query;
+        // error_log(print_r($query, true));
 
-        $search = $query['s'];
-        if (empty($search)) return $query;
+        if (!$query->is_search) return;
+        $search = $query->get('s');
+        error_log($search);
+        if (empty($search)) return;
+        $query->set('s', null);
+
+
         $meta_query = array(
-            'meta_query' => array(
+            'relation' => 'OR',
+            array(
                 'key' => 'smartimagesearch',
+                'value' => $search,
+                'compare' => 'LIKE'
+            ),
+            array(
+                'key' => '_wp_attached_file',
                 'value' => $search,
                 'compare' => 'LIKE'
             )
         );
-        unset($query['s']);
-        $query['meta_query'] = $meta_query;
-        error_log(print_r($query, true));
-        return $query;
+        $query->set('meta_query', $meta_query);
+
+        // error_log(print_r($query, true));
+        // return $query;
     }
 
     public function enqueue_scripts($hook)
@@ -495,6 +507,17 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             ),
             'nonce' => wp_create_nonce('wp_rest'),
         ));
+    }
+
+    public function delete_all_sisa_meta()
+    {
+        global $wpdb;
+        $results = $wpdb->delete(
+            $wpdb->prefix . 'postmeta',
+            array('meta_key' => 'smartimagesearch'),
+            array('%s')
+        );
+        return $results;
     }
 
     public static function write_log($log)
