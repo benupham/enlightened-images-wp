@@ -15,7 +15,7 @@ class SmartImageSearch_Settings extends SmartImageSearch_WP_Base
             __('Smart Image Search AI Settings'),
             esc_html__('Smart Image Search AI'),
             'manage_options',
-            'smartcropai',
+            'smartimagesearch',
             array($this, 'smartimagesearch_settings_do_page')
         );
     }
@@ -23,8 +23,8 @@ class SmartImageSearch_Settings extends SmartImageSearch_WP_Base
     public function smartimagesearch_settings_do_page()
     {
 ?>
-        <div id="smart_image_crop_settings"></div>
-        <div id="smart_image_crop_dashboard"></div>
+        <div id="smartimagesearch_settings"></div>
+        <div id="smartimagesearch_dashboard"></div>
 <?php
     }
 }
