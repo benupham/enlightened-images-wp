@@ -17,3 +17,4 @@ require dirname(__FILE__) . '/src/class-gcv-client.php';
 require dirname(__FILE__) . '/src/class-azure-client.php';
 
 $sis_plugin = new SmartImageSearch();
+// $sis_plugin->delete_all_sisa_meta();

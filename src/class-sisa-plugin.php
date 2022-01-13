@@ -1,5 +1,7 @@
 <?php
 
+use function PHPSTORM_META\type;
+
 class SmartImageSearch extends SmartImageSearch_WP_Base
 {
     const VERSION = '0.9';
@@ -133,9 +135,12 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
     public function delete_sisa_meta($metadata, $attachment_id)
     {
-        if (is_array(get_post_meta($attachment_id, 'smartimagesearch'))) {
-            update_post_meta($attachment_id, 'smartimagesearch', null);
-        }
+        global $wpdb;
+        $wpdb->delete(
+            $wpdb->prefix . 'postmeta',
+            array('meta_key' => 'smartimagesearch', 'post_id' => $attachment_id),
+            array('%s', '%d')
+        );
 
         return $metadata;
     }
@@ -400,6 +405,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     public function update_attachment_meta($cleaned_data, $p)
     {
         $sisa_meta = array();
+
         foreach ($cleaned_data as $value) {
             if (is_array($value) && !empty($value)) {
                 $sisa_meta = array_merge($sisa_meta, $value);
@@ -408,6 +414,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 $sisa_meta[] = $value;
             }
         }
+
         $sisa_meta = array_unique($sisa_meta);
         $sisa_meta_string = implode(' ', $sisa_meta);
         error_log($sisa_meta_string);
@@ -424,35 +431,40 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         $success = true;
         $alt = '';
         if ($save_alt === true) {
+
             if (is_array($cleaned_data['webLabels']) && !empty($cleaned_data['webLabels'][0])) {
-                $success = update_post_meta($p, '_wp_attachment_image_alt', $cleaned_data['webLabels'][0]);
                 $alt = $cleaned_data['webLabels'][0];
             } elseif (is_array($cleaned_data['webEntities']) && !empty($cleaned_data['webEntities'][0])) {
-                $success = update_post_meta($p, '_wp_attachment_image_alt', $cleaned_data['webEntities'][0]);
                 $alt = $cleaned_data['webEntities'][0];
             } else {
-                $success = update_post_meta($p, '_wp_attachment_image_alt', $cleaned_data['objects'][0]);
                 $alt = $cleaned_data['objects'][0];
             }
+
+            if (!empty($existing = get_post_meta($p, '_wp_attachment_image_alt', true))) {
+                return array('existing' => $existing, 'smartimage' => $alt);
+            }
+
+            $success = update_post_meta($p, '_wp_attachment_image_alt', $alt);
         }
 
         if (false === $success) {
-            return new WP_Error(500, 'Failed to update or matching alt text already exists.', $alt);
+            return new WP_Error(500, 'Failed to update alt text.', $alt);
         }
+
         return $alt;
     }
 
     public function filter_media_search($query)
     {
-        // return $query;
-        // error_log(print_r($query, true));
 
         if (!$query->is_search) return;
-        $search = $query->get('s');
-        error_log($search);
-        if (empty($search)) return;
-        $query->set('s', null);
+        $post_type = $query->get('post_type');
+        if (is_array($post_type) || $post_type !== 'attachment') return;
 
+        $search = $query->get('s');
+        if (empty($search)) return;
+
+        $query->set('s', null);
 
         $meta_query = array(
             'relation' => 'OR',
