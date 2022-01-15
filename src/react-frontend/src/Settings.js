@@ -58,7 +58,7 @@ const Settings = ({ nonce, urls, croppedSizes, setNotice }) => {
     }
   }
 
-  // get the key on settings page load
+  // get settings on page load
   useEffect(() => {
     getSettings()
   }, [nonce, urls])
@@ -89,15 +89,6 @@ const Settings = ({ nonce, urls, croppedSizes, setNotice }) => {
           </button>
         </p>
       </form>
-      <div className="image-sizes-list">
-        <h2>Cropped Image Sizes</h2>
-        <p>Only these image sizes are eligible for smart cropping:</p>
-        <ol>{croppedSizes && croppedSizes.map((size) => <li key={size}>{size}</li>)}</ol>
-        <p>
-          Other image sizes are not cropped, they are only resized, and thus do not need
-          smartcropping.
-        </p>
-      </div>
     </Accordion>
   )
 }
