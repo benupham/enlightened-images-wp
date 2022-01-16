@@ -7,21 +7,26 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
   const [images, setImages] = useState([])
   const [errorMessage, setErrorMessage] = useState("")
   const [bulkRunning, setBulkRunning] = useState(false)
+  const [complete, setComplete] = useState(false)
   const [stats, setStats] = useState({})
   const bulkTotal = useRef()
   const bulkRemaining = useRef()
   const bulkErrors = useRef()
-  const [pause, setPause] = useState(false)
+  const pause = useRef(false)
+  const [paused, setPaused] = useState(false)
   const [startTime, setStartTime] = useState()
 
   const prepBulkAnnotate = async () => {
     let response = null
     let data = {}
+    // console.log(urls)
     try {
       response = await fetch(urls.proxy, {
         headers: new Headers({ "X-WP-Nonce": nonce })
       })
-      data = await response.json()
+      const json = await response.json()
+      data = json.body
+      console.log(data)
     } catch (error) {
       setErrorMessage(error)
     }
@@ -34,16 +39,15 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
 
   const bulkAnnotate = useCallback(async () => {
     setBulkRunning(true)
-
     let response = null
     let data = {}
-
-    while (bulkRemaining.current > 0 && pause === false) {
+    while (bulkRemaining.current > 0 && pause.current === false) {
       try {
         response = await fetch(`${urls.proxy}?start=${startTime}`, {
-          headers: new Headers({ "X-WP-Nonce": nonce })
+          headers: new Headers({ "X-WP-Nonce": nonce, "Cache-Control": "no-cache" })
         })
-        data = await response.json()
+        const json = await response.json()
+        data = json.body
         console.log("bulk response", data)
       } catch (error) {
         console.log("bulk error", error)
@@ -53,30 +57,57 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
       bulkRemaining.current = data.count
       bulkErrors.current = data.errors
 
-      setStats((prev) => ({ ...prev, errors: data.errors, remaining: data.count }))
-      setImages((prev) => [...prev, data.image_data])
+      setStats((prev) => ({
+        ...prev,
+        errors: prev.errors + data.errors,
+        remaining: data.count
+      }))
+      setImages((prev) => [...prev, ...data.image_data])
       if (data.errors === data.image_data.length) {
         setErrorMessage("Stopping bulk annotation as the most recent batch was all errors.")
-        setPause(true)
+        pause.current = true
       }
     }
     setBulkRunning(false)
-  }, [pause, urls, nonce, startTime])
+    if (bulkRemaining.current === 0) setComplete(true)
+  }, [urls, nonce, startTime])
 
   useEffect(() => {
     prepBulkAnnotate()
   }, [])
 
+  const handleBulkAnnotate = (e) => {
+    e.preventDefault()
+    bulkAnnotate()
+  }
+
+  const handlePause = (e) => {
+    e.preventDefault()
+    if (pause.current === true) {
+      pause.current = false
+      setPaused(false)
+      bulkAnnotate()
+    } else {
+      pause.current = true
+      setPaused(true)
+    }
+  }
+
   return (
     <div className="sisa_wrapper wrap">
-      <button onClick={bulkAnnotate}>Bulk Annotation</button>
+      {!bulkRunning && !paused && !complete && (
+        <button onClick={handleBulkAnnotate}>Start Bulk</button>
+      )}
+      {(paused || bulkRunning) && (
+        <button onClick={handlePause}>
+          {paused ? (bulkRunning ? "Finishing..." : "Resume") : "Pause"}
+        </button>
+      )}
+      {complete && <h3>Complete!</h3>}
+
       <ProgressBar stats={stats} />
       <div className={bulkRunning === true ? "bulk-running" : ""}>
-        {errorMessage && (
-          <div className="error settings-error">
-            <p>{errorMessage}</p>
-          </div>
-        )}{" "}
+        {errorMessage && <div className="error settings-error">{errorMessage}</div>}{" "}
         <table className="sisa_bulk_table">
           <thead>
             <tr>

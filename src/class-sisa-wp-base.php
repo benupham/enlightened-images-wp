@@ -37,6 +37,7 @@ abstract class SmartImageSearch_WP_Base
         if (is_admin()) {
             add_action('admin_init', $this->get_method('admin_init'));
             add_action('admin_menu', $this->get_method('admin_menu'));
+            add_action('admin_init', $this->get_method('ajax_init'));
         }
     }
 
@@ -64,6 +65,10 @@ abstract class SmartImageSearch_WP_Base
     }
 
     public function admin_menu()
+    {
+    }
+
+    public function ajax_init()
     {
     }
 }

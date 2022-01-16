@@ -6,7 +6,6 @@ import Settings from "./Settings"
 const App = (props) => {
   const [notice, setNotice] = useState([])
   const { urls, nonce, imageSizes } = window.smartimagesearch_ajax
-
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [notice])
@@ -31,7 +30,7 @@ const Notice = ({ notice }) => {
   )
 }
 
-const dashboardContainer = document.getElementById("smart_image_crop_dashboard")
+const dashboardContainer = document.getElementById("smartimagesearch_dashboard")
 
 if (dashboardContainer) {
   ReactDOM.render(<App />, dashboardContainer)

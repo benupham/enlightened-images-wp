@@ -20,6 +20,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     {
         parent::__construct();
         $this->settings = new SmartImageSearch_Settings();
+        $this->gcv_client = new SmartImageSearch_GCV_Client();
     }
 
     public function init()
@@ -37,12 +38,20 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
         add_action('rest_api_init', $this->get_method('add_sisa_api_routes'));
 
-        // add_filter('wp_generate_attachment_metadata', $this->get_method('delete_sisa_meta'), 10, 2);
+        // Need to enclose this in a settings check
+        add_filter('wp_generate_attachment_metadata', $this->get_method('process_attachment_upload'), 10, 2);
+    }
+
+    public function ajax_init()
+    {
+        add_filter(
+            'wp_ajax_sisa_async_annotate_upload_new_media',
+            $this->get_method('annotate_on_upload')
+        );
     }
 
     public function admin_init()
     {
-
         // Add a smartimagesearch button to the non-modal edit media page.
         add_action('attachment_submitbox_misc_actions', array($this, 'add_sisa_button_to_media_edit_page'), 99);
 
@@ -226,7 +235,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $now = (int) $start;
         }
 
-        $posts_per_page = 5;
+        $posts_per_page = 2;
 
         $args = array(
             'post_type' => 'attachment',
@@ -280,8 +289,8 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 $response[] = new WP_Error('bad_image', 'image filepath not found');
                 continue;
             }
-            $gcv_client = new SmartImageSearch_GCV_Client();
-            $gcv_result = $gcv_client->get_annotation($image_file_path);
+            // $gcv_client = new SmartImageSearch_GCV_Client();
+            $gcv_result = $this->gcv_client->get_annotation($image_file_path);
 
             if (is_wp_error($gcv_result)) {
                 ++$errors;
@@ -459,12 +468,32 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
         if (!$query->is_search) return;
         $post_type = $query->get('post_type');
+
         if (is_array($post_type) || $post_type !== 'attachment') return;
 
         $search = $query->get('s');
         if (empty($search)) return;
 
         $query->set('s', null);
+
+        // This is so we search attachments by sisa meta, and filename, and title. 
+        // https://wordpress.stackexchange.com/questions/78649/using-meta-query-meta-query-with-a-search-query-s
+        add_filter('get_meta_sql', function ($sql) use ($search) {
+            global $wpdb;
+
+            // Only run once:
+            static $nr = 0;
+            if (0 != $nr++) return $sql;
+
+            // Modified WHERE
+            $sql['where'] = sprintf(
+                " AND ( %s OR %s ) ",
+                $wpdb->prepare("{$wpdb->posts}.post_title like '%%%s%%'", $search),
+                mb_substr($sql['where'], 5, mb_strlen($sql['where']))
+            );
+
+            return $sql;
+        });
 
         $meta_query = array(
             'relation' => 'OR',
@@ -519,6 +548,57 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             ),
             'nonce' => wp_create_nonce('wp_rest'),
         ));
+    }
+
+    public function process_attachment_upload($metadata, $attachment_id)
+    {
+        if ($auto_annotate = true) {
+            $this->async_annotate($metadata, $attachment_id);
+        }
+        return $metadata;
+    }
+
+    //Does an "async" generate of smart data by making an ajax request right after image upload
+    public function async_annotate($metadata, $attachment_id)
+    {
+        $context     = 'wp';
+        $action      = 'sisa_async_annotate_upload_new_media';
+        $_ajax_nonce = wp_create_nonce('sisa_new_media-' . $attachment_id);
+        $body = compact('action', '_ajax_nonce', 'metadata', 'attachment_id', 'context');
+
+        $args = array(
+            'timeout'   => 0.01,
+            'blocking'  => false,
+            'body'      => $body,
+            'cookies'   => isset($_COOKIE) && is_array($_COOKIE) ? $_COOKIE : array(),
+            'sslverify' => apply_filters('https_local_ssl_verify', false),
+        );
+
+        if (getenv('WORDPRESS_HOST') !== false) {
+            wp_remote_post(getenv('WORDPRESS_HOST') . '/wp-admin/admin-ajax.php', $args);
+        } else {
+            wp_remote_post(admin_url('admin-ajax.php'), $args);
+        }
+    }
+
+    public function annotate_on_upload()
+    {
+        if (current_user_can('upload_files')) {
+            $attachment_id = intval($_POST['attachment_id']);
+            $metadata = $_POST['metadata'];
+            $image_file_path = $this->get_filepath($attachment_id);
+
+            if (is_array($metadata)) {
+                $gcv_client = new SmartImageSearch_GCV_Client();
+                $gcv_result = $gcv_client->get_annotation($image_file_path);
+                if (!is_wp_error($gcv_result)) {
+                    $cleaned_data = $this->clean_up_gcv_data($gcv_result);
+                    $this->update_image_alt_text($cleaned_data, $attachment_id, true);
+                    $this->update_attachment_meta($cleaned_data, $attachment_id);
+                }
+            }
+        }
+        exit();
     }
 
     public function delete_all_sisa_meta()
