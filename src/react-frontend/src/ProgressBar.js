@@ -1,3 +1,5 @@
+import React from "react"
+
 export const ProgressBar = ({ stats }) => {
   const { total, errors, remaining } = stats
   const completed = total - remaining

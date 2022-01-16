@@ -1,13 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from "react"
 import "./dashboard.css"
-import { collateThumbs, resetUrlParams } from "./helper"
-import Thumbnail from "./Thumbnail"
-import FilterBar from "./Filterbar"
-import { requestSmartCrop, requestImages } from "./api"
-import { getObserver } from "./hooks/infiniteScroll"
 import { ProgressBar } from "./ProgressBar"
+import { ImageRow } from "./ImageRow"
 
-const Dashboard = ({ urls, nonce, croppedSizes, setNotice }) => {
+const Dashboard = ({ urls, nonce, setNotice }) => {
   const [images, setImages] = useState([])
   const [errorMessage, setErrorMessage] = useState("")
   const [bulkRunning, setBulkRunning] = useState(false)
@@ -19,8 +15,8 @@ const Dashboard = ({ urls, nonce, croppedSizes, setNotice }) => {
   const [startTime, setStartTime] = useState()
 
   const prepBulkAnnotate = async () => {
-    const response = null
-    const data = {}
+    let response = null
+    let data = {}
     try {
       response = await fetch(urls.proxy, {
         headers: new Headers({ "X-WP-Nonce": nonce })
@@ -37,8 +33,10 @@ const Dashboard = ({ urls, nonce, croppedSizes, setNotice }) => {
   }
 
   const bulkAnnotate = useCallback(async () => {
-    const response = null
-    const data = {}
+    setBulkRunning(true)
+
+    let response = null
+    let data = {}
 
     while (bulkRemaining.current > 0 && pause === false) {
       try {
@@ -62,7 +60,12 @@ const Dashboard = ({ urls, nonce, croppedSizes, setNotice }) => {
         setPause(true)
       }
     }
-  }, [pause])
+    setBulkRunning(false)
+  }, [pause, urls, nonce, startTime])
+
+  useEffect(() => {
+    prepBulkAnnotate()
+  }, [])
 
   return (
     <div className="sisa_wrapper wrap">
@@ -91,7 +94,7 @@ const Dashboard = ({ urls, nonce, croppedSizes, setNotice }) => {
           </tbody>
         </table>
       </div>
-      <div ref={loader}>
+      <div>
         {bulkRunning === true && (
           <div className="loading">
             <div className="lds-ring">

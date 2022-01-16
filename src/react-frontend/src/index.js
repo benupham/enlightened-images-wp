@@ -2,13 +2,10 @@ import React, { useEffect, useState } from "react"
 import ReactDOM from "react-dom"
 import Dashboard from "./Dashboard"
 import Settings from "./Settings"
-import { getCroppedSizes } from "./helper"
 
 const App = (props) => {
   const [notice, setNotice] = useState([])
-  const { urls, nonce, imageSizes } = window.smart_image_crop_ajax
-  const croppedSizes = getCroppedSizes(imageSizes)
-  // [noticeType, setNoticeType] = useState("")
+  const { urls, nonce, imageSizes } = window.smartimagesearch_ajax
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -16,16 +13,10 @@ const App = (props) => {
 
   return (
     <>
-      <h1>Smart Image Crop AI</h1>
+      <h1>Smart Image ALT and Search AI</h1>
       {notice.length > 0 && <Notice notice={notice} />}
-      <Settings nonce={nonce} urls={urls} croppedSizes={croppedSizes} setNotice={setNotice} />
-      <Dashboard
-        urls={urls}
-        nonce={nonce}
-        imageSizes={imageSizes}
-        croppedSizes={croppedSizes}
-        setNotice={setNotice}
-      />
+      <Settings nonce={nonce} urls={urls} setNotice={setNotice} />
+      <Dashboard urls={urls} nonce={nonce} setNotice={setNotice} />
     </>
   )
 }

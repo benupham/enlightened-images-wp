@@ -52,10 +52,10 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         // Filter media library search to include smartsearch meta values
         // add_filter('ajax_query_attachments_args', array($this, 'filter_media_search'), 10, 1);
         add_action('pre_get_posts', array($this, 'filter_media_search'), 10, 1);
-        // add_action(
-        //     'admin_enqueue_scripts',
-        //     $this->get_method('enqueue_scripts')
-        // );
+        add_action(
+            'admin_enqueue_scripts',
+            $this->get_method('enqueue_scripts')
+        );
 
         $plugin = plugin_basename(
             dirname(dirname(__FILE__)) . '/smart-image-search-ai.php'
