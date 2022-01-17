@@ -31,7 +31,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     {
         add_filter(
             'wp_ajax_sisa_async_annotate_upload_new_media',
-            $this->get_method('annotate_on_upload')
+            $this->get_method('ajax_annotate_on_upload')
         );
     }
 
@@ -109,15 +109,14 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         ));
     }
 
-    // get saved settings from WP DB
     public function api_get_sisa_settings($request)
     {
         $response = new WP_REST_RESPONSE(array(
             'success' => true,
             'value' => array(
                 'apiKey' => get_option('sisa_api_key', ''),
-                'useSmartsearch' => get_option('sisa_use_smartsearch', 1),
-                'altText' => get_option('sisa_alt_text', 1),
+                'useSmartsearch' => get_option('sisa_use_smartsearch', true),
+                'altText' => get_option('sisa_alt_text', true),
                 'onUpload' => get_option('sisa_on_media_upload', 'async')
             ),
         ), 200);
@@ -125,15 +124,14 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $response;
     }
 
-    // save settings to WP DB
     public function api_update_sisa_settings($request)
     {
         $json = $request->get_json_params();
-
-        update_option('sisa_api_key', sanitize_text_field(($json['apiKey'])));
-        update_option('sisa_use_smartsearch', sanitize_text_field(($json['useSmartsearch'])));
-        update_option('sisa_alt_text', sanitize_text_field(($json['altText'])));
-        update_option('sisa_on_media_upload', sanitize_text_field(($json['onUpload'])));
+        error_log(print_r($json, true));
+        update_option('sisa_api_key', sanitize_text_field(($json['options']['apiKey'])));
+        update_option('sisa_use_smartsearch', sanitize_text_field(($json['options']['useSmartsearch'])));
+        update_option('sisa_alt_text', sanitize_text_field(($json['options']['altText'])));
+        update_option('sisa_on_media_upload', sanitize_text_field(($json['options']['onUpload'])));
 
         $response = new WP_REST_RESPONSE(array(
             'success' => true,
@@ -143,7 +141,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $response;
     }
 
-    // check permissions
     public function sisa_settings_permissions_check()
     {
         // Restrict endpoint to only users who have the capability to manage options.
@@ -406,6 +403,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
     public function filter_media_search($query)
     {
+        if (true != get_option('sisa_use_smartsearch', true)) return;
 
         if (!$query->is_search) return;
         $post_type = $query->get('post_type');
@@ -493,13 +491,16 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
     public function process_attachment_upload($metadata, $attachment_id)
     {
-        if ($auto_annotate = true) {
+        $annotate_upload = get_option('sisa_on_media_upload', 'async');
+        if ($annotate_upload == 'async') {
             $this->async_annotate($metadata, $attachment_id);
+        } elseif ($annotate_upload == 'blocking') {
+            $this->blocking_annotate($metadata, $attachment_id);
         }
         return $metadata;
     }
 
-    //Does an "async" generate of smart data by making an ajax request right after image upload
+    //Does an "async" smart annotation by making an ajax request right after image upload
     public function async_annotate($metadata, $attachment_id)
     {
         $context     = 'wp';
@@ -522,7 +523,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         }
     }
 
-    public function annotate_on_upload()
+    public function ajax_annotate_on_upload()
     {
         if (current_user_can('upload_files')) {
             $attachment_id = intval($_POST['attachment_id']);
@@ -540,6 +541,24 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             }
         }
         exit();
+    }
+
+    public function blocking_annotate($metadata, $attachment_id)
+    {
+        if (current_user_can('upload_files') && is_array($metadata)) {
+            $image_file_path = $this->get_filepath($attachment_id);
+
+            $gcv_client = new SmartImageSearch_GCV_Client();
+            $gcv_result = $gcv_client->get_annotation($image_file_path);
+
+            if (!is_wp_error($gcv_result)) {
+                $cleaned_data = $this->clean_up_gcv_data($gcv_result);
+                $this->update_image_alt_text($cleaned_data, $attachment_id, true);
+                $this->update_attachment_meta($cleaned_data, $attachment_id);
+            }
+        }
+
+        return $metadata;
     }
 
     public function delete_sisa_meta($metadata, $attachment_id)
@@ -568,9 +587,9 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     public function admin_menu()
     {
         global $sisa_settings_page;
-        $sisa_settings_page = add_management_page(
-            __('Smart Image Search AI Settings'),
-            esc_html__('Smart Image Search AI'),
+        $sisa_settings_page = add_media_page(
+            __('Smart Image Bulk Alt Text and Index'),
+            esc_html__('Bulk Alt Text and SmartIndex'),
             'manage_options',
             'smartimagesearch',
             array($this, 'smartimagesearch_settings_do_page')

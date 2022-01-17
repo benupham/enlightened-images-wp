@@ -96,11 +96,13 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
   return (
     <div className="sisa_wrapper wrap">
       {!bulkRunning && !paused && !complete && (
-        <button onClick={handleBulkAnnotate}>Start Bulk</button>
+        <button className="button button-primary" onClick={handleBulkAnnotate}>
+          Start Bulk
+        </button>
       )}
       {(paused || bulkRunning) && (
-        <button onClick={handlePause}>
-          {paused ? (bulkRunning ? "Finishing..." : "Resume") : "Pause"}
+        <button className="button" onClick={handlePause}>
+          {paused ? (bulkRunning ? "Stopping..." : "Resume") : "Stop"}
         </button>
       )}
       {complete && <h3>Complete!</h3>}

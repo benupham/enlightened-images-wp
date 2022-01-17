@@ -9,7 +9,7 @@ class SmartImageSearch_GCV_Client
         $img = file_get_contents($original_file);
         $data = base64_encode($img);
         $baseurl = 'https://vision.googleapis.com/v1/images:annotate';
-        $apikey = get_option('smartcropai_api_key');
+        $apikey = get_option('sisa_api_key');
         $body = array(
             'requests' => array(
                 array(

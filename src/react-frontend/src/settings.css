@@ -1,0 +1,34 @@
+.sisa-options-table {
+  border-collapse: collapse;
+  text-align: left;
+}
+.sisa-options-table th {
+  vertical-align: top;
+  width: 200px;
+}
+.sisa-options-table td {
+  vertical-align: top;
+}
+.sisa-options-table input[type="checkbox"],
+.sisa-options-table input[type="radio"] {
+  margin-right: 12px;
+}
+input[type="checkbox"] + label,
+input[type="radio"]:checked + label {
+  font-weight: bold;
+}
+.sisa-options-table .description {
+  display: block;
+  font-size: 13px;
+  color: gray;
+  margin-left: 28px;
+  margin-top: 4px;
+  width: 600px;
+}
+.sisa-options-table td p {
+  margin-bottom: 10px;
+}
+
+.sisa-options-table h4 {
+  margin-top: 5px;
+}

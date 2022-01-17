@@ -1,11 +1,3 @@
-.smart_image_crop_thumbs {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: center;
-  max-width: 100%;
-}
-
 .loading {
   display: flex;
   justify-content: center;
