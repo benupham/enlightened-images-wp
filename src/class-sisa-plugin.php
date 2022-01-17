@@ -4,30 +4,15 @@ use function PHPSTORM_META\type;
 
 class SmartImageSearch extends SmartImageSearch_WP_Base
 {
-    const VERSION = '0.9';
-    const DATETIME_FORMAT = 'Y-m-d G:i:s';
-
-    private $settings;
-
-    public static function version()
-    {
-        /* Avoid using get_plugin_data() because it is not loaded early enough
-        in xmlrpc.php. */
-        return self::VERSION;
-    }
 
     public function __construct()
     {
         parent::__construct();
-        $this->settings = new SmartImageSearch_Settings();
         $this->gcv_client = new SmartImageSearch_GCV_Client();
     }
 
     public function init()
     {
-
-        add_filter('attachment_fields_to_edit', array($this, 'add_sisa_button_to_edit_media_modal_fields_area'), 99, 2);
-
         load_plugin_textdomain(
             self::NAME,
             false,
@@ -52,15 +37,8 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
     public function admin_init()
     {
-        // Add a smartimagesearch button to the non-modal edit media page.
-        add_action('attachment_submitbox_misc_actions', array($this, 'add_sisa_button_to_media_edit_page'), 99);
+        add_action('pre_get_posts', $this->get_method('filter_media_search'), 10, 1);
 
-        // Add a smartimagesearch link to actions list in the media list view.
-        // add_filter('media_row_actions', array($this, 'add_sisa_link_to_media_list_view'), 10, 2);
-
-        // Filter media library search to include smartsearch meta values
-        // add_filter('ajax_query_attachments_args', array($this, 'filter_media_search'), 10, 1);
-        add_action('pre_get_posts', array($this, 'filter_media_search'), 10, 1);
         add_action(
             'admin_enqueue_scripts',
             $this->get_method('enqueue_scripts')
@@ -74,37 +52,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             "plugin_action_links_$plugin",
             $this->get_method('add_sisa_plugin_links')
         );
-    }
-
-    public function create_page_url($id)
-    {
-        return add_query_arg('page', 'smartimagesearch', admin_url('tools.php')) . '&attachmentId=' . $id;
-    }
-
-    /**
-     * Add a smart image search button to the submit box on the non-modal "Edit Media" screen for an image attachment.
-     */
-    public function add_sisa_button_to_media_edit_page()
-    {
-        global $post;
-
-        echo '<div class="misc-pub-section">';
-        echo '<a href="' . esc_url($this->create_page_url($post->ID)) . '" class="button-secondary button-large" title="' . esc_attr(__('Smart annotate this image', 'smartimagesearch')) . '">' . _x('Smart Annotate', 'action for a single image', 'smartimagesearch') . '</a>';
-        echo '</div>';
-    }
-
-    public function add_sisa_button_to_edit_media_modal_fields_area($form_fields, $post)
-    {
-
-        $form_fields['smartimagesearch'] = array(
-            'label' => '',
-            'input' => 'html',
-            'html' => '<a href="' . esc_url($this->create_page_url($post->ID)) . '" class="button-secondary button-large" title="' . esc_attr(__('Smart annotate this image', 'smartimagesearch')) . '">' . _x('Smart Annotate', 'action for a single image', 'smartimagesearch') . '</a>',
-            'show_in_modal' => true,
-            'show_in_edit' => false,
-        );
-
-        return $form_fields;
     }
 
     public function add_sisa_plugin_links($current_links)
@@ -124,14 +71,14 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             'attachment',
             'smartimagesearch',
             array(
-                'get_callback' => $this->get_method('get_sisa_custom_meta'),
+                'get_callback' => $this->get_method('get_sisa_meta_for_api'),
                 'update_callback' => null,
                 'schema' => null,
             )
         );
     }
 
-    public function get_sisa_custom_meta($object)
+    public function get_sisa_meta_for_api($object)
     {
 
         $the_meta = get_post_meta($object['id'], 'smartimagesearch', true);
@@ -142,25 +89,13 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $the_meta;
     }
 
-    public function delete_sisa_meta($metadata, $attachment_id)
-    {
-        global $wpdb;
-        $wpdb->delete(
-            $wpdb->prefix . 'postmeta',
-            array('meta_key' => 'smartimagesearch', 'post_id' => $attachment_id),
-            array('%s', '%d')
-        );
-
-        return $metadata;
-    }
-
     public function add_sisa_api_routes()
     {
         register_rest_route('smartimagesearch/v1', '/proxy', array(
             // By using this constant we ensure that when the WP_REST_Server changes our readable endpoints will work as intended.
             'methods' => WP_REST_Server::READABLE,
             'callback' => $this->get_method('api_bulk_sisa'),
-            // 'permission_callback' => $this->get_method('sisa_proxy_permissions_check'),
+            'permission_callback' => $this->get_method('sisa_proxy_permissions_check'),
         ));
         register_rest_route('smartimagesearch/v1', '/settings', array(
             'methods' => WP_REST_Server::READABLE,
@@ -177,11 +112,13 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     // get saved settings from WP DB
     public function api_get_sisa_settings($request)
     {
-        $api_key = get_option('smartimagesearch_api_key');
         $response = new WP_REST_RESPONSE(array(
             'success' => true,
             'value' => array(
-                'apiKey' => !$api_key ? '' : $api_key,
+                'apiKey' => get_option('sisa_api_key', ''),
+                'useSmartsearch' => get_option('sisa_use_smartsearch', 1),
+                'altText' => get_option('sisa_alt_text', 1),
+                'onUpload' => get_option('sisa_on_media_upload', 'async')
             ),
         ), 200);
         $response->set_headers(array('Cache-Control' => 'no-cache'));
@@ -192,10 +129,14 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     public function api_update_sisa_settings($request)
     {
         $json = $request->get_json_params();
-        // store the values in wp_options table
-        $updated_api_key = update_option('smartimagesearch_api_key', $json['apiKey']);
+
+        update_option('sisa_api_key', sanitize_text_field(($json['apiKey'])));
+        update_option('sisa_use_smartsearch', sanitize_text_field(($json['useSmartsearch'])));
+        update_option('sisa_alt_text', sanitize_text_field(($json['altText'])));
+        update_option('sisa_on_media_upload', sanitize_text_field(($json['onUpload'])));
+
         $response = new WP_REST_RESPONSE(array(
-            'success' => $updated_api_key,
+            'success' => true,
             'value' => $json,
         ), 200);
         $response->set_headers(array('Cache-Control' => 'no-cache'));
@@ -601,6 +542,18 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         exit();
     }
 
+    public function delete_sisa_meta($metadata, $attachment_id)
+    {
+        global $wpdb;
+        $wpdb->delete(
+            $wpdb->prefix . 'postmeta',
+            array('meta_key' => 'smartimagesearch', 'post_id' => $attachment_id),
+            array('%s', '%d')
+        );
+
+        return $metadata;
+    }
+
     public function delete_all_sisa_meta()
     {
         global $wpdb;
@@ -612,14 +565,23 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $results;
     }
 
-    public static function write_log($log)
+    public function admin_menu()
     {
-        if (true === WP_DEBUG) {
-            if (is_array($log) || is_object($log)) {
-                error_log(print_r($log, true));
-            } else {
-                error_log($log);
-            }
-        }
+        global $sisa_settings_page;
+        $sisa_settings_page = add_management_page(
+            __('Smart Image Search AI Settings'),
+            esc_html__('Smart Image Search AI'),
+            'manage_options',
+            'smartimagesearch',
+            array($this, 'smartimagesearch_settings_do_page')
+        );
+    }
+
+    public function smartimagesearch_settings_do_page()
+    {
+?>
+        <div id="smartimagesearch_settings"></div>
+        <div id="smartimagesearch_dashboard"></div>
+<?php
     }
 }
