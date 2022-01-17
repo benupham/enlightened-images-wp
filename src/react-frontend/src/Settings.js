@@ -126,13 +126,13 @@ const Settings = ({ nonce, urls, setNotice }) => {
                   Media library search will include search of image smart labelling metadata.
                 </label>
                 <span className="description">
-                  Checking this feature allows for searching for images in the Media Library by the
+                  {`Checking this feature allows for searching for images in the Media Library by the
                   labels given them after smart AI classification by Google. These labels include
                   objects found in the image ("person", "sofa", "car"), keywords from similar images
                   on the web ("Sidney Poitier", "Eiffel Tower"), and any text identified in the
                   image. For example, if the image is labelled as having an apple in it, searching
                   for "apple" in the library will return the image, even if apple is not in its
-                  title or file name.
+                  title or file name.`}
                 </span>
               </td>
             </tr>

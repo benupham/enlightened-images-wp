@@ -18,12 +18,11 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             false,
             dirname(plugin_basename(__FILE__)) . '/languages'
         );
-
+        //PRO
         add_action('rest_api_init', $this->get_method('add_sisa_meta_to_media_api'));
 
         add_action('rest_api_init', $this->get_method('add_sisa_api_routes'));
 
-        // Need to enclose this in a settings check
         add_filter('wp_generate_attachment_metadata', $this->get_method('process_attachment_upload'), 10, 2);
     }
 
@@ -65,6 +64,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return array_merge($additional, $current_links);
     }
 
+    //Pro
     public function add_sisa_meta_to_media_api()
     {
         register_rest_field(
@@ -78,6 +78,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         );
     }
 
+    //Pro
     public function get_sisa_meta_for_api($object)
     {
 
@@ -109,6 +110,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         ));
     }
 
+    //change
     public function api_get_sisa_settings($request)
     {
         $response = new WP_REST_RESPONSE(array(
@@ -124,6 +126,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $response;
     }
 
+    //change
     public function api_update_sisa_settings($request)
     {
         $json = $request->get_json_params();
@@ -161,6 +164,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return new WP_Error('rest_forbidden', esc_html__('You do not have permission to use this.', 'smartimagesearch'), array('status' => 401));
     }
 
+    //change
     public function api_bulk_sisa($request)
     {
 
@@ -349,6 +353,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $cleaned_data;
     }
 
+    //pro
     public function update_attachment_meta($cleaned_data, $p)
     {
         $sisa_meta = array();
@@ -373,6 +378,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $sisa_meta_string;
     }
 
+    //change
     public function update_image_alt_text($cleaned_data, $p, $save_alt)
     {
         $success = true;
@@ -399,6 +405,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return array('existing' => '', 'smartimage' => $alt);
     }
 
+    //pro
     public function filter_media_search($query)
     {
         if (true != get_option('sisa_use_smartsearch', true)) return;
@@ -518,6 +525,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         }
     }
 
+    //change
     public function ajax_annotate_on_upload()
     {
         if (!is_array($_POST['metadata'])) exit();
@@ -546,6 +554,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         exit();
     }
 
+    //change
     public function blocking_annotate($metadata, $attachment_id)
     {
         if (!get_option('sisa_alt_text')) return $metadata;
@@ -571,6 +580,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $metadata;
     }
 
+    //pro
     public function delete_sisa_meta($metadata, $attachment_id)
     {
         global $wpdb;
@@ -583,6 +593,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $metadata;
     }
 
+    //pro
     public function delete_all_sisa_meta()
     {
         global $wpdb;
@@ -594,6 +605,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $results;
     }
 
+    //change
     public function admin_menu()
     {
         global $sisa_settings_page;

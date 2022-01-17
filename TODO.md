@@ -3,3 +3,4 @@
 * test with Relevanssi and any Relevanssi competitors
 * add option to syncronously annotate images on upload like TinyPng
 * measure time estimate for finishing bulk
+* Fix Save settings button when clicked
