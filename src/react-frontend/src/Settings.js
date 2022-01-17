@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Accordion } from "./Accordion"
 import { checkApiKey } from "./api"
 import "./settings.css"
 
-const Settings = ({ nonce, urls, croppedSizes, setNotice }) => {
+const Settings = ({ nonce, urls, setNotice }) => {
   const [apiKey, setApiKey] = useState("")
   const [options, setOptions] = useState({
     apiKey: "",
@@ -28,14 +28,18 @@ const Settings = ({ nonce, urls, croppedSizes, setNotice }) => {
     })
 
     // check if API key is valid
-    try {
-      const data = await checkApiKey(options.apiKey)
-      setNotice(["API key saved and validated with Google API!", "success"])
-    } catch (error) {
-      if (error.message == "The request is missing a valid API key.") {
-        error.message = "API key not valid. Please check your Google Cloud Vision account."
+    if (apiKey != options.apiKey) {
+      try {
+        const data = await checkApiKey(options.apiKey)
+        console.log(data)
+        setApiKey(options.apiKey)
+        setNotice(["API key saved and validated with Google API!", "success"])
+      } catch (error) {
+        if (error.message == "The request is missing a valid API key.") {
+          error.message = "API key not valid. Please check your Google Cloud Vision account."
+        }
+        setNotice([`Key saved, but there was an error: ${error.message}`, "error"])
       }
-      setNotice([`Key saved, but there was an error: ${error.message}`, "error"])
     }
 
     setSaving(false)
@@ -76,7 +80,8 @@ const Settings = ({ nonce, urls, croppedSizes, setNotice }) => {
     const target = e.target
     const value = target.type === "checkbox" ? target.checked : target.value
     const name = target.name
-    setOptions((prev) => ({ ...prev, [name]: value }))
+    const optionValue = value === true ? 1 : value === false ? 0 : value
+    setOptions((prev) => ({ ...prev, [name]: optionValue }))
     console.log(options)
   }
   return (
@@ -114,7 +119,7 @@ const Settings = ({ nonce, urls, croppedSizes, setNotice }) => {
                 <input
                   name="useSmartsearch"
                   type="checkbox"
-                  checked={options.useSmartsearch}
+                  checked={options.useSmartsearch === 1 ? true : false}
                   onChange={handleInputChange}
                 />
                 <label htmlFor="useSmartsearch">
@@ -138,7 +143,7 @@ const Settings = ({ nonce, urls, croppedSizes, setNotice }) => {
                   name="altText"
                   type="checkbox"
                   onChange={handleInputChange}
-                  checked={options.altText}
+                  checked={options.altText === 1 ? true : false}
                 />
                 <label htmlFor="altText">
                   If image alt text is missing, generate it automatically.

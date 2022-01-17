@@ -1,0 +1,26 @@
+.progress-bar-wrap {
+  position: relative;
+  margin: 30px auto;
+  height: auto;
+}
+.progress-bar {
+  position: relative;
+  width: 100%;
+  height: auto;
+  background-color: white;
+}
+.progress-size {
+  position: absolute;
+  min-width: 25px;
+  height: 100%;
+  background: repeating-linear-gradient(-65deg, #2271b1, #2271b1 15px, #ffffff 15px, #ffffff 30px);
+  border-radius: 5px;
+  border: 1px solid #2271b1;
+}
+.progress-stats {
+  text-align: center;
+  position: relative;
+  font-weight: bold;
+  text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.712);
+  line-height: 40px;
+}
