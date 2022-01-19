@@ -12,7 +12,7 @@ const App = (props) => {
 
   return (
     <>
-      <h1>Smart Image ALT and Search AI</h1>
+      <h1>Smart Image AI Alt Text Generator</h1>
       {notice.length > 0 && <Notice notice={notice} />}
       <Settings nonce={nonce} urls={urls} setNotice={setNotice} />
       <Dashboard urls={urls} nonce={nonce} setNotice={setNotice} />

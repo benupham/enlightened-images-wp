@@ -78,3 +78,11 @@ button span {
   margin-left: 4px;
   margin-bottom: 3px;
 }
+.sisa-bulk-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-content: center;
+  justify-content: flex-start;
+  align-items: center;
+}

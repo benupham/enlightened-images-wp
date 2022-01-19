@@ -7,9 +7,8 @@ export const ImageRow = ({ image }) => {
       <td>
         <img width="75" height="75" src={image.thumbnail} alt={image.alt_text.smartimage} />
       </td>
+      <td>{image.file}</td>
       <td>{image.alt_text.smartimage}</td>
-      <td>{image.smartsearch_meta}</td>
-      <td></td>
     </tr>
   )
 }

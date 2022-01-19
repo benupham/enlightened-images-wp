@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react"
 import "./dashboard.css"
 import { ProgressBar } from "./ProgressBar"
 import { ImageRow } from "./ImageRow"
+import { ImageCard } from "./ImageCard"
 
 const Dashboard = ({ urls, nonce, setNotice }) => {
   const [images, setImages] = useState([])
@@ -95,6 +96,7 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
 
   return (
     <div className="sisa_wrapper wrap">
+      <h3>Images missing alt text: {stats.remaining}</h3>
       {!bulkRunning && !paused && !complete && (
         <button className="button button-primary" onClick={handleBulkAnnotate}>
           Start Bulk
@@ -108,24 +110,12 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
       {complete && <h3>Complete!</h3>}
 
       <ProgressBar stats={stats} />
-      <div className={bulkRunning === true ? "bulk-running" : ""}>
+      <div className={bulkRunning === true ? "bulk-running sisa-bulk-wrap" : "sisa-bulk-wrap"}>
         {errorMessage && <div className="error settings-error">{errorMessage}</div>}{" "}
-        <table className="sisa_bulk_table">
-          <thead>
-            <tr>
-              <th>Image</th>
-              <th>Alt Text</th>
-              <th>Smart Meta</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {images &&
-              images.map((image, index) => {
-                return <ImageRow image={image} key={index} />
-              })}
-          </tbody>
-        </table>
+        {images &&
+          images.map((image, index) => {
+            return <ImageCard image={image} key={index} />
+          })}
       </div>
       <div>
         {bulkRunning === true && (

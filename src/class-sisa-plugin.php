@@ -1,7 +1,5 @@
 <?php
 
-use function PHPSTORM_META\type;
-
 class SmartImageSearch extends SmartImageSearch_WP_Base
 {
 
@@ -18,8 +16,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             false,
             dirname(plugin_basename(__FILE__)) . '/languages'
         );
-        //PRO
-        add_action('rest_api_init', $this->get_method('add_sisa_meta_to_media_api'));
 
         add_action('rest_api_init', $this->get_method('add_sisa_api_routes'));
 
@@ -36,7 +32,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
     public function admin_init()
     {
-        add_action('pre_get_posts', $this->get_method('filter_media_search'), 10, 1);
 
         add_action(
             'admin_enqueue_scripts',
@@ -64,32 +59,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return array_merge($additional, $current_links);
     }
 
-    //Pro
-    public function add_sisa_meta_to_media_api()
-    {
-        register_rest_field(
-            'attachment',
-            'smartimagesearch',
-            array(
-                'get_callback' => $this->get_method('get_sisa_meta_for_api'),
-                'update_callback' => null,
-                'schema' => null,
-            )
-        );
-    }
-
-    //Pro
-    public function get_sisa_meta_for_api($object)
-    {
-
-        $the_meta = get_post_meta($object['id'], 'smartimagesearch', true);
-
-        if (is_null($the_meta) || empty($the_meta)) {
-            return null;
-        }
-        return $the_meta;
-    }
-
     public function add_sisa_api_routes()
     {
         register_rest_route('smartimagesearch/v1', '/proxy', array(
@@ -110,15 +79,12 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         ));
     }
 
-    //change
     public function api_get_sisa_settings($request)
     {
         $response = new WP_REST_RESPONSE(array(
             'success' => true,
             'value' => array(
                 'apiKey' => get_option('sisa_api_key', ''),
-                'useSmartsearch' => (int) get_option('sisa_use_smartsearch', 1),
-                'altText' => (int) get_option('sisa_alt_text', 1),
                 'onUpload' => get_option('sisa_on_media_upload', 'async')
             ),
         ), 200);
@@ -126,14 +92,11 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $response;
     }
 
-    //change
     public function api_update_sisa_settings($request)
     {
         $json = $request->get_json_params();
         error_log(print_r($json, true));
         update_option('sisa_api_key', sanitize_text_field(($json['options']['apiKey'])));
-        update_option('sisa_use_smartsearch', sanitize_text_field(($json['options']['useSmartsearch'])));
-        update_option('sisa_alt_text', sanitize_text_field(($json['options']['altText'])));
         update_option('sisa_on_media_upload', sanitize_text_field(($json['options']['onUpload'])));
 
         $response = new WP_REST_RESPONSE(array(
@@ -164,7 +127,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return new WP_Error('rest_forbidden', esc_html__('You do not have permission to use this.', 'smartimagesearch'), array('status' => 401));
     }
 
-    //change
     public function api_bulk_sisa($request)
     {
 
@@ -172,7 +134,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
         $now = time();
         $start = !empty($params['start']) ? $params['start'] : false;
-        // error_log($start);
+
         if (isset($start) && (string)(int)$start == $start && strlen($start) > 9) {
             $now = (int) $start;
         }
@@ -187,8 +149,18 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             'date_query' => array(
                 'before' => date('Y-m-d H:i:s', $now),
             ),
-            'meta_key' => 'smartimagesearch',
-            'meta_compare' => 'NOT EXISTS', //this may not work
+            'meta_query'  => array(
+                array(
+                    'key' => '_wp_attachment_image_alt',
+                    'value' => '',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => '_wp_attachment_image_alt',
+                    'compare' => 'NOT EXISTS'
+                ),
+                'relation' => 'OR'
+            ),
             'post_mime_type' => array('image/jpeg', 'image/gif', 'image/png', 'image/bmp'),
             'fields' => 'ids'
         );
@@ -224,6 +196,10 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $annotation_data = array();
 
             $annotation_data['thumbnail'] = wp_get_attachment_image_url($p);
+            $annotation_data['attachmentURL'] = '/wp-admin/upload.php?item=' . $p;
+
+            $attachment = get_post($p);
+            $annotation_data['file'] = $attachment->post_name;
 
             $image_file_path = $this->get_filepath($p);
 
@@ -231,7 +207,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 $response[] = new WP_Error('bad_image', 'image filepath not found');
                 continue;
             }
-            // $gcv_client = new SmartImageSearch_GCV_Client();
+
             $gcv_result = $this->gcv_client->get_annotation($image_file_path);
 
             if (is_wp_error($gcv_result)) {
@@ -243,16 +219,12 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
             $cleaned_data = $this->clean_up_gcv_data($gcv_result);
             $alt = $this->update_image_alt_text($cleaned_data, $p, true);
-            $meta = $this->update_attachment_meta($cleaned_data, $p);
 
-            $annotation_data['gcv_data'] = $cleaned_data;
-
-            if (is_wp_error($alt) || is_wp_error($meta)) {
+            if (is_wp_error($alt)) {
                 ++$errors;
             }
 
             $annotation_data['alt_text'] = $alt;
-            $annotation_data['smartsearch_meta'] = $meta;
 
             $response[] = $annotation_data;
         }
@@ -353,32 +325,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $cleaned_data;
     }
 
-    //pro
-    public function update_attachment_meta($cleaned_data, $p)
-    {
-        $sisa_meta = array();
-
-        foreach ($cleaned_data as $value) {
-            if (is_array($value) && !empty($value)) {
-                $sisa_meta = array_merge($sisa_meta, $value);
-            }
-            if (is_string($value) && !empty($value)) {
-                $sisa_meta[] = $value;
-            }
-        }
-
-        $sisa_meta = array_unique($sisa_meta);
-        $sisa_meta_string = implode(' ', $sisa_meta);
-        // error_log($sisa_meta_string);
-        $success = update_post_meta($p, 'smartimagesearch', $sisa_meta_string);
-
-        if (false === $success) {
-            return new WP_Error(500, 'Failed to update or matching meta already exists.', $sisa_meta_string);
-        }
-        return $sisa_meta_string;
-    }
-
-    //change
     public function update_image_alt_text($cleaned_data, $p, $save_alt)
     {
         $success = true;
@@ -403,56 +349,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         }
 
         return array('existing' => '', 'smartimage' => $alt);
-    }
-
-    //pro
-    public function filter_media_search($query)
-    {
-        if (true != get_option('sisa_use_smartsearch', true)) return;
-
-        if (!$query->is_search) return;
-        $post_type = $query->get('post_type');
-
-        if (is_array($post_type) || $post_type !== 'attachment') return;
-
-        $search = $query->get('s');
-        if (empty($search)) return;
-
-        $query->set('s', null);
-
-        // This is so we search attachments by sisa meta, and filename, and title. 
-        // https://wordpress.stackexchange.com/questions/78649/using-meta-query-meta-query-with-a-search-query-s
-        add_filter('get_meta_sql', function ($sql) use ($search) {
-            global $wpdb;
-
-            // Only run once:
-            static $nr = 0;
-            if (0 != $nr++) return $sql;
-
-            // Modified WHERE
-            $sql['where'] = sprintf(
-                " AND ( %s OR %s ) ",
-                $wpdb->prepare("{$wpdb->posts}.post_title like '%%%s%%'", $search),
-                mb_substr($sql['where'], 5, mb_strlen($sql['where']))
-            );
-
-            return $sql;
-        });
-
-        $meta_query = array(
-            'relation' => 'OR',
-            array(
-                'key' => 'smartimagesearch',
-                'value' => $search,
-                'compare' => 'LIKE'
-            ),
-            array(
-                'key' => '_wp_attached_file',
-                'value' => $search,
-                'compare' => 'LIKE'
-            )
-        );
-        $query->set('meta_query', $meta_query);
     }
 
     public function enqueue_scripts($hook)
@@ -525,7 +421,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         }
     }
 
-    //change
     public function ajax_annotate_on_upload()
     {
         if (!is_array($_POST['metadata'])) exit();
@@ -535,29 +430,20 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $attachment_id = intval($_POST['attachment_id']);
             $image_file_path = $this->get_filepath($attachment_id);
 
-            if (get_option('sisa_alt_text') === 1) {
+            $gcv_client = new SmartImageSearch_GCV_Client();
+            $gcv_result = $gcv_client->get_annotation($image_file_path);
 
-                $gcv_client = new SmartImageSearch_GCV_Client();
-                $gcv_result = $gcv_client->get_annotation($image_file_path);
+            if (!is_wp_error($gcv_result)) {
 
-                if (!is_wp_error($gcv_result)) {
-
-                    $cleaned_data = $this->clean_up_gcv_data($gcv_result);
-                    $this->update_image_alt_text($cleaned_data, $attachment_id, true);
-                    error_log(get_option('sisa_use_smartsearch'));
-                    if (get_option('sisa_use_smartsearch') === 1) {
-                        $this->update_attachment_meta($cleaned_data, $attachment_id);
-                    }
-                }
+                $cleaned_data = $this->clean_up_gcv_data($gcv_result);
+                $this->update_image_alt_text($cleaned_data, $attachment_id, true);
             }
         }
         exit();
     }
 
-    //change
     public function blocking_annotate($metadata, $attachment_id)
     {
-        if (!get_option('sisa_alt_text')) return $metadata;
 
         if (current_user_can('upload_files') && is_array($metadata)) {
 
@@ -570,52 +456,33 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
                 $cleaned_data = $this->clean_up_gcv_data($gcv_result);
                 $this->update_image_alt_text($cleaned_data, $attachment_id, true);
-
-                if (!!get_option('sisa_use_smartsearch')) {
-                    $this->update_attachment_meta($cleaned_data, $attachment_id);
-                }
             }
         }
 
         return $metadata;
     }
 
-    //pro
-    public function delete_sisa_meta($metadata, $attachment_id)
-    {
-        global $wpdb;
-        $wpdb->delete(
-            $wpdb->prefix . 'postmeta',
-            array('meta_key' => 'smartimagesearch', 'post_id' => $attachment_id),
-            array('%s', '%d')
-        );
-
-        return $metadata;
-    }
-
-    //pro
-    public function delete_all_sisa_meta()
-    {
-        global $wpdb;
-        $results = $wpdb->delete(
-            $wpdb->prefix . 'postmeta',
-            array('meta_key' => 'smartimagesearch'),
-            array('%s')
-        );
-        return $results;
-    }
-
-    //change
     public function admin_menu()
     {
         global $sisa_settings_page;
         $sisa_settings_page = add_media_page(
-            __('Smart Image Bulk Alt Text and Index'),
-            esc_html__('Bulk Alt Text and SmartIndex'),
+            __('Bulk Image Alt Text'),
+            esc_html__('Bulk Alt Text'),
             'manage_options',
             'smartimagesearch',
             array($this, 'smartimagesearch_settings_do_page')
         );
+    }
+
+    public function delete_all_alt_text()
+    {
+        global $wpdb;
+        $results = $wpdb->delete(
+            $wpdb->prefix . 'postmeta',
+            array('meta_key' => '_wp_attachment_image_alt'),
+            array('%s')
+        );
+        return $results;
     }
 
     public function smartimagesearch_settings_do_page()

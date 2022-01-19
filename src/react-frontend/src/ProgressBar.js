@@ -2,9 +2,11 @@ import React from "react"
 import "./progressbar.css"
 
 export const ProgressBar = ({ stats }) => {
-  const { total, errors, remaining } = stats
-  const completed = total - remaining
-  const percent = Math.round((completed / total) * 100)
+  let { total, remaining } = stats
+  let completed = parseInt(total - remaining) || 0
+  let percent = parseInt(Math.round((completed / total) * 100)) || 0
+  if (!percent) percent = 0
+  if (!total) total = 0
   const progressCSS = `width: ${percent}%`
 
   return (

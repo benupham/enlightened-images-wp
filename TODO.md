@@ -4,3 +4,4 @@
 * add option to syncronously annotate images on upload like TinyPng
 * measure time estimate for finishing bulk
 * Fix Save settings button when clicked
+* fix bug when pausing before any images have resolved/when a bulk request fails. Line 53 of Dashboard.js

@@ -1,0 +1,27 @@
+.image-card {
+  flex: 0 1 calc(25% - 1em);
+  display: flex;
+  flex-wrap: nowrap;
+  margin: 5px;
+  overflow: hidden;
+}
+.thumb {
+  margin-right: 10px;
+}
+.image-card h4 {
+  margin: 0px;
+}
+.details {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+.alt-text {
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+.file {
+  color: gray;
+  font-size: 10px;
+  line-height: 12px;
+}
