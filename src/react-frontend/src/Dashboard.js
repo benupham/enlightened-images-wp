@@ -16,6 +16,7 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
   const pause = useRef(false)
   const [paused, setPaused] = useState(false)
   const [startTime, setStartTime] = useState()
+  const [estimate, setEstimate] = useState()
 
   const prepBulkAnnotate = async () => {
     let response = null
@@ -42,14 +43,25 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
     setBulkRunning(true)
     let response = null
     let data = {}
+
     while (bulkRemaining.current > 0 && pause.current === false) {
       try {
+        const start = Date.now()
+
         response = await fetch(`${urls.proxy}?start=${startTime}`, {
           headers: new Headers({ "X-WP-Nonce": nonce, "Cache-Control": "no-cache" })
         })
         const json = await response.json()
         data = json.body
         console.log("bulk response", data)
+
+        const end = Date.now()
+        const elapsed = end - start
+        console.log(elapsed)
+        const estimate = elapsed * Math.ceil(data.count / data.image_data.length)
+        console.log(estimate)
+        const hourEst = new Date(estimate).toISOString().substr(11, 8)
+        setEstimate(hourEst)
       } catch (error) {
         console.log("bulk error", error)
         setErrorMessage(error)
@@ -70,6 +82,7 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
       }
     }
     setBulkRunning(false)
+
     if (bulkRemaining.current === 0) setComplete(true)
   }, [urls, nonce, startTime])
 
@@ -95,9 +108,11 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
   }
 
   return (
-    <div className="sisa_wrapper wrap">
+    <div className="sisa-wrapper">
       <h3>Images missing alt text: {stats.remaining}</h3>
-      {!bulkRunning && !paused && !complete && (
+      {estimate && <h3>Time remaining: {estimate}</h3>}
+
+      {!bulkRunning && !paused && stats.remaining > 0 && (
         <button className="button button-primary" onClick={handleBulkAnnotate}>
           Start Bulk
         </button>
@@ -107,7 +122,7 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
           {paused ? (bulkRunning ? "Stopping..." : "Resume") : "Stop"}
         </button>
       )}
-      {complete && <h3>Complete!</h3>}
+      {stats.remaining === 0 && <h3>Complete!</h3>}
 
       <ProgressBar stats={stats} />
       <div className={bulkRunning === true ? "bulk-running sisa-bulk-wrap" : "sisa-bulk-wrap"}>
@@ -116,8 +131,6 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
           images.map((image, index) => {
             return <ImageCard image={image} key={index} />
           })}
-      </div>
-      <div>
         {bulkRunning === true && (
           <div className="loading">
             <div className="lds-ring">

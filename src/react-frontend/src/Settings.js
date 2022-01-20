@@ -12,6 +12,7 @@ const Settings = ({ nonce, urls, setNotice }) => {
   const [isSaving, setSaving] = useState(false)
   const [isGetting, setGetting] = useState(true)
   const [isOpen, setOpen] = useState(false)
+  const [isSavable, setSavable] = useState(false)
 
   const updateOptions = async (event) => {
     event.preventDefault()
@@ -27,10 +28,11 @@ const Settings = ({ nonce, urls, setNotice }) => {
 
     // check if API key is valid
     if (apiKey != options.apiKey) {
+      console.log(apiKey)
       try {
         const data = await checkApiKey(options.apiKey)
         console.log(data)
-        setApiKey(options.apiKey)
+
         setNotice(["API key saved and validated with Google API!", "success"])
       } catch (error) {
         if (error.message == "The request is missing a valid API key.") {
@@ -38,9 +40,13 @@ const Settings = ({ nonce, urls, setNotice }) => {
         }
         setNotice([`Key saved, but there was an error: ${error.message}`, "error"])
       }
+      setApiKey(options.apiKey)
+    } else {
+      setNotice([`Options saved.`, "success"])
     }
 
     setSaving(false)
+    setSavable(false)
   }
 
   const getOptions = async () => {
@@ -80,11 +86,11 @@ const Settings = ({ nonce, urls, setNotice }) => {
     const name = target.name
     const optionValue = value === true ? 1 : value === false ? 0 : value
     setOptions((prev) => ({ ...prev, [name]: optionValue }))
-    console.log(options)
   }
+
   return (
     <Accordion title={"Settings"} open={isOpen}>
-      <form onSubmit={updateOptions}>
+      <form onSubmit={updateOptions} onChange={() => setSavable(true)}>
         <table className="sisa-options-table form-table">
           <tbody>
             <tr>
@@ -160,11 +166,11 @@ const Settings = ({ nonce, urls, setNotice }) => {
             </tr>
           </tbody>
         </table>
-        <p>
+        <div>
           <button type="submit" className="button button-primary" disabled={isSaving}>
             Save Settings
           </button>
-        </p>
+        </div>
       </form>
     </Accordion>
   )
