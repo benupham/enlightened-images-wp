@@ -5,4 +5,4 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
   die;
 }
 
-delete_option('smartcrop_api_key');
+delete_option('sisa_api_key');

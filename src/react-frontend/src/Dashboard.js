@@ -60,11 +60,11 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
         console.log(elapsed)
         const estimate = elapsed * Math.ceil(data.count / data.image_data.length)
         console.log(estimate)
-        const hourEst = new Date(estimate).toISOString().substr(11, 8)
+        const hourEst = new Date(estimate).toISOString().substring(11, 8)
         setEstimate(hourEst)
       } catch (error) {
         console.log("bulk error", error)
-        setErrorMessage(error)
+        // setErrorMessage(error)
         break
       }
       bulkRemaining.current = data.count
@@ -76,8 +76,14 @@ const Dashboard = ({ urls, nonce, setNotice }) => {
         remaining: data.count
       }))
       setImages((prev) => [...prev, ...data.image_data])
+
       if (data.errors === data.image_data.length) {
-        setErrorMessage("Stopping bulk annotation as the most recent batch was all errors.")
+        const errors = data.image_data[0].gcv_data.errors
+        const errorMsg = errors[Object.keys(errors)[0]]
+
+        setErrorMessage(
+          `Stopping bulk annotation as the most recent batch was all errors. First error: ${errorMsg}`
+        )
         pause.current = true
       }
     }
