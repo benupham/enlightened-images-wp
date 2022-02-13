@@ -12,6 +12,7 @@
 require dirname(__FILE__) . '/src/class-sisa-wp-base.php';
 require dirname(__FILE__) . '/src/class-sisa-plugin.php';
 require dirname(__FILE__) . '/src/class-gcv-client.php';
+require dirname(__FILE__) . '/src/class-pro-client.php';
 
 $sis_plugin = new SmartImageSearch();
 // $sis_plugin->delete_all_alt_text();

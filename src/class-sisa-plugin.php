@@ -6,7 +6,18 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     public function __construct()
     {
         parent::__construct();
-        $this->gcv_client = new SmartImageSearch_GCV_Client();
+        $this->is_pro = (int) get_option('sisa_pro') === 1 ? true : false;
+        error_log($this->is_pro);
+        $this->set_client();
+    }
+
+    public function set_client()
+    {
+        if ($this->is_pro) {
+            $this->gcv_client = new SmartImageSearch_SisaPro_Client();
+        } else {
+            $this->gcv_client = new SmartImageSearch_GCV_Client();
+        }
     }
 
     public function init()
@@ -65,17 +76,17 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             // By using this constant we ensure that when the WP_REST_Server changes our readable endpoints will work as intended.
             'methods' => WP_REST_Server::READABLE,
             'callback' => $this->get_method('api_bulk_sisa'),
-            'permission_callback' => $this->get_method('sisa_proxy_permissions_check'),
+            'permission_callback' => $this->get_method('sisa_permissions_check'),
         ));
         register_rest_route('smartimagesearch/v1', '/settings', array(
             'methods' => WP_REST_Server::READABLE,
             'callback' => $this->get_method('api_get_sisa_settings'),
-            'permission_callback' => $this->get_method('sisa_settings_permissions_check'),
+            'permission_callback' => $this->get_method('sisa_permissions_check'),
         ));
         register_rest_route('smartimagesearch/v1', '/settings', array(
             'methods' => WP_REST_Server::CREATABLE,
             'callback' => $this->get_method('api_update_sisa_settings'),
-            'permission_callback' => $this->get_method('sisa_settings_permissions_check'),
+            'permission_callback' => $this->get_method('sisa_permissions_check'),
         ));
     }
 
@@ -83,8 +94,10 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     {
         $response = new WP_REST_RESPONSE(array(
             'success' => true,
-            'value' => array(
+            'options' => array(
                 'apiKey' => get_option('sisa_api_key', ''),
+                'proApiKey' => get_option('sisa_pro_api_key') ?: '',
+                'isPro' => (int) get_option('sisa_pro'),
                 'onUpload' => get_option('sisa_on_media_upload', 'async')
             ),
         ), 200);
@@ -95,36 +108,57 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     public function api_update_sisa_settings($request)
     {
         $json = $request->get_json_params();
-        error_log(print_r($json, true));
         update_option('sisa_api_key', sanitize_text_field(($json['options']['apiKey'])));
-        update_option('sisa_on_media_upload', sanitize_text_field(($json['options']['onUpload'])));
+        update_option('sisa_pro_api_key', sanitize_text_field(($json['options']['proApiKey'])));
+
+        $sisa_pro = $this->check_pro_api_key(sanitize_text_field(($json['options']['proApiKey'])));
+
+        if (true === $sisa_pro) {
+            update_option('sisa_pro', (int) 1);
+            $this->is_pro = true;
+            $this->set_client();
+        } else {
+            update_option('sisa_pro', (int) 0);
+            $this->is_pro = false;
+            $this->set_client();
+        }
 
         $response = new WP_REST_RESPONSE(array(
             'success' => true,
-            'value' => $json,
+            'options' => array(
+                'apiKey' => $json['options']['apiKey'],
+                'proApiKey' => $json['options']['proApiKey'],
+                'isPro' => (int) get_option('sisa_pro'),
+                'onUpload' => get_option('sisa_on_media_upload', 'async')
+            ),
         ), 200);
         $response->set_headers(array('Cache-Control' => 'no-cache'));
         return $response;
     }
 
-    public function sisa_settings_permissions_check()
+    public function check_pro_api_key($pro_api_key)
     {
-        // Restrict endpoint to only users who have the capability to manage options.
-        if (current_user_can('manage_options')) {
+        $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/account?api_key=' . $pro_api_key, array(
+            'headers' => array('Content-Type' => 'application/json'),
+            'method' => 'GET',
+        ));
+
+        $data = json_decode(wp_remote_retrieve_body($response));
+
+        if (isset($data) && isset($data->success)) {
             return true;
         }
-
-        return new WP_Error('rest_forbidden', esc_html__('You do not have permissions to view this data.', 'smartimagesearch'), array('status' => 401));
+        return false;
     }
 
-    public function sisa_proxy_permissions_check()
+    public function sisa_permissions_check()
     {
         // Restrict endpoint to only users who have the capability to manage options.
         if (current_user_can('manage_options')) {
             return true;
         }
 
-        return new WP_Error('rest_forbidden', esc_html__('You do not have permission to use this.', 'smartimagesearch'), array('status' => 401));
+        return new WP_Error('rest_forbidden', esc_html__('You do not have permissions to do that.', 'smartimagesearch'), array('status' => 401));
     }
 
     public function api_bulk_sisa($request)
@@ -167,7 +201,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
         $query = new WP_Query($args);
 
-        if ($start === false) {
+        if (false === $start) {
             return new WP_REST_RESPONSE(array(
                 'success' => true,
                 'body' => array(
@@ -201,14 +235,28 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $attachment = get_post($p);
             $annotation_data['file'] = $attachment->post_name;
 
-            $image_file_path = $this->get_filepath($p);
+            $image = null;
 
-            if ($image_file_path === false) {
-                $response[] = new WP_Error('bad_image', 'image filepath not found');
+            if ($this->is_pro) {
+                if (has_image_size('medium')) {
+                    $image = wp_get_attachment_image_url($p, 'medium');
+                } else {
+                    $image = wp_get_original_image_url($p);
+                }
+            } else {
+                $image = $this->get_filepath($p);
+            }
+
+            error_log($image);
+
+            if ($image === false) {
+                $response[] = new WP_Error('bad_image', 'Image filepath not found');
                 continue;
             }
 
-            $gcv_result = $this->gcv_client->get_annotation($image_file_path);
+            $gcv_result = $this->gcv_client->get_annotation($image);
+            error_log("result from server endpoint");
+            error_log(print_r($gcv_result, true));
 
             if (is_wp_error($gcv_result)) {
                 ++$errors;

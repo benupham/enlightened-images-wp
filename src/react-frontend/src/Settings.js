@@ -5,8 +5,10 @@ import "./settings.css"
 
 const Settings = ({ nonce, urls, setNotice }) => {
   const [apiKey, setApiKey] = useState("")
+  const [proApiKey, setProApiKey] = useState("")
   const [options, setOptions] = useState({
     apiKey: "",
+    proApiKey: "",
     onUpload: "async"
   })
   const [isSaving, setSaving] = useState(false)
@@ -17,7 +19,9 @@ const Settings = ({ nonce, urls, setNotice }) => {
   const updateOptions = async (event) => {
     event.preventDefault()
     setSaving(true)
-    await fetch(urls.settings, {
+    console.log("sending options")
+    console.log(options)
+    let response = await fetch(urls.settings, {
       body: JSON.stringify({ options }),
       method: "POST",
       headers: new Headers({
@@ -25,24 +29,33 @@ const Settings = ({ nonce, urls, setNotice }) => {
         "X-WP-Nonce": nonce
       })
     })
+    let json = await response.json()
+    setOptions(json.options)
+    console.log(json)
 
-    // check if API key is valid
-    if (apiKey != options.apiKey) {
-      console.log(apiKey)
+    // check if Google API key is valid
+    if (options.proApiKey.length === 0) {
       try {
-        const data = await checkApiKey(options.apiKey)
+        let data = await checkApiKey(options.apiKey)
         console.log(data)
 
         setNotice(["API key saved and validated with Google API!", "success"])
       } catch (error) {
-        if (error.message == "The request is missing a valid API key.") {
-          error.message = "API key not valid. Please check your Google Cloud Vision account."
-        }
-        setNotice([`Key saved, but there was an error: ${error.message}`, "error"])
+        // if (error.message == "The request is missing a valid API key.") {
+        //   error.message = "Google API key not valid. Please check your Google Cloud Vision account."
+        // }
+        setNotice([
+          `Google has a problem with your API key: ${error.message} Please check your Google account, this is not a problem with this plugin.`,
+          "error"
+        ])
       }
       setApiKey(options.apiKey)
+    } else if (json.options.isPro === 0) {
+      setNotice(["Pro API key is invalid. Please check your account.", "error"])
+    } else if (json.options.isPro === 1) {
+      setNotice([`Options saved, using Smart Image Pro API key.`, "success"])
     } else {
-      setNotice([`Options saved.`, "success"])
+      setNotice([`Options saved, using Google API key.`, "success"])
     }
 
     setSaving(false)
@@ -65,9 +78,9 @@ const Settings = ({ nonce, urls, setNotice }) => {
     })
     json = await response.json()
     console.log(json)
-    setOptions(json.value)
-    setApiKey(json.value.apiKey)
-    if (json.value.apiKey.length == 0) {
+    setOptions(json.options)
+    // setApiKey(json.options.apiKey)
+    if (json.options.apiKey.length == 0) {
       setOpen(true)
     }
     if (elapsed) {
@@ -93,26 +106,51 @@ const Settings = ({ nonce, urls, setNotice }) => {
       <form onSubmit={updateOptions} onChange={() => setSavable(true)}>
         <table className="sisa-options-table form-table">
           <tbody>
+            {options.isPro === 0 && (
+              <tr>
+                <th scope="row">
+                  Google Cloud Vision <br />
+                  API Key
+                </th>
+                <td>
+                  <input
+                    name="apiKey"
+                    type="text"
+                    value={options.apiKey}
+                    onChange={handleInputChange}
+                  />
+                  {isGetting && <p>Loading...</p>}
+                  <p>
+                    <a
+                      href="https://cloud.google.com/vision/docs/setup"
+                      target="_blank"
+                      rel="noopener noreferrer">
+                      Get your Google Cloud Vision API key here.
+                    </a>
+                  </p>
+                </td>
+              </tr>
+            )}
             <tr>
               <th scope="row">
-                Google Cloud Vision <br />
+                SmartImage Pro
+                <br />
                 API Key
               </th>
               <td>
                 <input
-                  name="apiKey"
-                  required
+                  name="proApiKey"
                   type="text"
-                  value={options.apiKey}
+                  value={options.proApiKey}
                   onChange={handleInputChange}
                 />
                 {isGetting && <p>Loading...</p>}
                 <p>
                   <a
-                    href="https://cloud.google.com/vision/docs/setup"
+                    href="https://smart-image-ai.lndo.site/"
                     target="_blank"
                     rel="noopener noreferrer">
-                    Get your Google Cloud Vision API key here.
+                    Get your Smart Image Pro API key here.
                   </a>
                 </p>
               </td>

@@ -5,6 +5,7 @@ class SmartImageSearch_GCV_Client
 
     public function get_annotation($original_file)
     {
+        error_log("using google client");
 
         $img = file_get_contents($original_file);
         $data = base64_encode($img);
@@ -16,27 +17,11 @@ class SmartImageSearch_GCV_Client
                     'features' => array(
                         array(
                             'maxResults' => 10,
-                            'type' => 'LANDMARK_DETECTION'
-                        ),
-                        array(
-                            'maxResults' => 10,
-                            'type' => 'TEXT_DETECTION'
-                        ),
-                        array(
-                            'maxResults' => 10,
                             'type' => 'OBJECT_LOCALIZATION'
                         ),
                         array(
                             'maxResults' => 10,
                             'type' => 'WEB_DETECTION'
-                        ),
-                        array(
-                            'maxResults' => 10,
-                            'type' => 'LABEL_DETECTION'
-                        ),
-                        array(
-                            'maxResults' => 10,
-                            'type' => 'LOGO_DETECTION'
                         ),
                     ),
                     'image' => array(
