@@ -4,7 +4,7 @@ import { ProgressBar } from "./ProgressBar"
 import { ImageRow } from "./ImageRow"
 import { ImageCard } from "./ImageCard"
 
-const Dashboard = ({ urls, nonce, setNotice }) => {
+const Dashboard = ({ urls, nonce }) => {
   const [images, setImages] = useState([])
   const [errorMessage, setErrorMessage] = useState("")
   const [bulkRunning, setBulkRunning] = useState(false)

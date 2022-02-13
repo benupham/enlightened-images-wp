@@ -151,6 +151,21 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return false;
     }
 
+    public function get_estimate($image_count)
+    {
+        $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/estimate?imageCount=' . $image_count, array(
+            'headers' => array('Content-Type' => 'application/json'),
+            'method' => 'GET',
+        ));
+
+        $data = json_decode(wp_remote_retrieve_body($response));
+
+        if (isset($data) && isset($data->success)) {
+            return $data->cost;
+        }
+        return new WP_Error('estimate_unavailable', 'Could not generate Pro estimate');
+    }
+
     public function sisa_permissions_check()
     {
         // Restrict endpoint to only users who have the capability to manage options.
@@ -208,6 +223,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                     'count' => $query->found_posts,
                     'errors' => 0,
                     'start' => $now,
+                    'estimate' => $this->get_estimate($query->found_posts)
                 ),
             ), 200);
         }

@@ -22,7 +22,7 @@ class SmartImageSearch_SisaPro_Client
     }
 
     $data = json_decode(wp_remote_retrieve_body($request));
-
+    error_log('data on client end');
     error_log(print_r($data, true));
 
     if (isset($data->code)) {
@@ -32,6 +32,8 @@ class SmartImageSearch_SisaPro_Client
       $response_code = wp_remote_retrieve_response_code($request);
       $response_message = wp_remote_retrieve_response_message($request);
     }
+
+    error_log($response_code . ' ' . $response_message);
 
     if (200 != $response_code && !empty($response_message)) {
       return new WP_Error($response_code, $response_message, $data);

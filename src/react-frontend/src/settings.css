@@ -32,3 +32,21 @@ input[type="radio"]:checked + label {
 .sisa-options-table h4 {
   margin-top: 5px;
 }
+
+.estimate.alertbar {
+  width: fit-content;
+  padding: 30px;
+  border: 2px solid #f2da8c;
+  border-radius: 20px;
+  background-color: #fff;
+  color: #004785;
+}
+.estimate.alertbar .title {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+.estimate.alertbar .button-primary {
+  font-weight: bold;
+  background-color: #f2da8c;
+  color: #004785;
+}

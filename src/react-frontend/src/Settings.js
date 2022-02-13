@@ -3,7 +3,7 @@ import { Accordion } from "./Accordion"
 import { checkApiKey } from "./api"
 import "./settings.css"
 
-const Settings = ({ nonce, urls, setNotice }) => {
+const Settings = ({ nonce, urls, setNotice, estimate }) => {
   const [apiKey, setApiKey] = useState("")
   const [proApiKey, setProApiKey] = useState("")
   const [options, setOptions] = useState({
@@ -79,8 +79,8 @@ const Settings = ({ nonce, urls, setNotice }) => {
     json = await response.json()
     console.log(json)
     setOptions(json.options)
-    // setApiKey(json.options.apiKey)
-    if (json.options.apiKey.length == 0) {
+
+    if (json.options.proApiKey.length == 0) {
       setOpen(true)
     }
     if (elapsed) {
@@ -91,7 +91,7 @@ const Settings = ({ nonce, urls, setNotice }) => {
   // get settings on page load
   useEffect(() => {
     getOptions()
-  }, [nonce, urls])
+  }, [nonce, urls, estimate])
 
   const handleInputChange = (e) => {
     const target = e.target
@@ -103,9 +103,52 @@ const Settings = ({ nonce, urls, setNotice }) => {
 
   return (
     <Accordion title={"Settings"} open={isOpen}>
+      {options.isPro === 0 && (
+        <div>
+          <h2>Enter your SmartImage API key or Google API key</h2>
+          <div className="estimate alertbar">
+            <div>
+              <span className="title">
+                Generate missing alt text for all images for only: ${estimate}
+              </span>
+            </div>
+            <a
+              href="https://dev-smart-image-ai.pantheonsite.io/checkout/"
+              target="_blank"
+              rel="noreferrer"
+              className="button-primary">
+              Buy Now
+            </a>
+          </div>
+        </div>
+      )}
       <form onSubmit={updateOptions} onChange={() => setSavable(true)}>
         <table className="sisa-options-table form-table">
           <tbody>
+            <tr>
+              <th scope="row">
+                SmartImage Pro
+                <br />
+                API Key
+              </th>
+              <td>
+                <input
+                  name="proApiKey"
+                  type="text"
+                  value={options.proApiKey}
+                  onChange={handleInputChange}
+                />
+                {isGetting && <p>Loading...</p>}
+                <p>
+                  <a
+                    href="https://smart-image-ai.lndo.site/"
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    Get your Smart Image Pro API key here.
+                  </a>
+                </p>
+              </td>
+            </tr>
             {options.isPro === 0 && (
               <tr>
                 <th scope="row">
@@ -131,30 +174,6 @@ const Settings = ({ nonce, urls, setNotice }) => {
                 </td>
               </tr>
             )}
-            <tr>
-              <th scope="row">
-                SmartImage Pro
-                <br />
-                API Key
-              </th>
-              <td>
-                <input
-                  name="proApiKey"
-                  type="text"
-                  value={options.proApiKey}
-                  onChange={handleInputChange}
-                />
-                {isGetting && <p>Loading...</p>}
-                <p>
-                  <a
-                    href="https://smart-image-ai.lndo.site/"
-                    target="_blank"
-                    rel="noopener noreferrer">
-                    Get your Smart Image Pro API key here.
-                  </a>
-                </p>
-              </td>
-            </tr>
             <tr>
               <th scope="row">Image Upload</th>
               <td>

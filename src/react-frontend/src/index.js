@@ -5,17 +5,39 @@ import Settings from "./Settings"
 
 const App = (props) => {
   const [notice, setNotice] = useState([])
-  const { urls, nonce, imageSizes } = window.smartimagesearch_ajax
+  const [estimate, setEstimate] = useState()
+  const { urls, nonce } = window.smartimagesearch_ajax
+  let bulkError = null
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [notice])
+
+  useEffect(() => {
+    let response = null
+    let data = {}
+
+    async function getEstimate() {
+      try {
+        response = await fetch(urls.proxy, {
+          headers: new Headers({ "X-WP-Nonce": nonce })
+        })
+        const json = await response.json()
+        data = json.body
+        console.log(data)
+        setEstimate(data.estimate)
+      } catch (error) {
+        setNotice(error)
+      }
+    }
+    getEstimate()
+  }, [])
 
   return (
     <>
       <h1>Smart Image AI Alt Text Generator</h1>
       {notice.length > 0 && <Notice notice={notice} />}
-      <Settings nonce={nonce} urls={urls} setNotice={setNotice} />
-      <Dashboard urls={urls} nonce={nonce} setNotice={setNotice} />
+      <Settings nonce={nonce} urls={urls} setNotice={setNotice} estimate={estimate} />
+      <Dashboard urls={urls} nonce={nonce} />
     </>
   )
 }

@@ -59,10 +59,16 @@ class SmartImageSearch_GCV_Client
 
         if (200 != $response_code && !empty($response_message)) {
             return new WP_Error($response_code, $response_message, $data);
-        } elseif (200 != $response_code) {
-            return new WP_Error($response_code, "Uknown error", $data);
-        } else {
-            return $data->responses[0];
         }
+        if (200 != $response_code) {
+            return new WP_Error($response_code, "Uknown error", $data);
+        }
+
+        $annotation = $data->responses[0];
+        if ($annotation->error) {
+            return new WP_Error($annotation->error->code, $annotation->error->message);
+        }
+
+        return $annotation;
     }
 }
