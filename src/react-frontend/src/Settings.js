@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { Accordion } from "./Accordion"
 import { checkApiKey } from "./api"
+import { Dashboard } from "./Dashboard"
 import "./settings.css"
 
 const Settings = ({ nonce, urls, setNotice, estimate }) => {
@@ -9,7 +10,14 @@ const Settings = ({ nonce, urls, setNotice, estimate }) => {
   const [options, setOptions] = useState({
     apiKey: "",
     proApiKey: "",
-    onUpload: "async"
+    onUpload: "async",
+    isPro: 0,
+    hasPro: 0,
+    text: 0,
+    labels: 0,
+    landmarks: 0,
+    logos: 0,
+    altText: 1
   })
   const [isSaving, setSaving] = useState(false)
   const [isGetting, setGetting] = useState(true)
@@ -102,134 +110,143 @@ const Settings = ({ nonce, urls, setNotice, estimate }) => {
   }
 
   return (
-    <Accordion title={"Settings"} open={isOpen}>
-      {options.isPro === 0 && (
-        <div>
-          <h2>Enter your SmartImage API key or Google API key</h2>
-          <div className="estimate alertbar">
-            <div>
-              <span className="title">
-                Generate missing alt text for all images for only: ${estimate}
-              </span>
+    <>
+      <Accordion title={"Settings"} open={isOpen}>
+        {options.isPro === 0 && (
+          <div>
+            <h2>Enter your SmartImage API key or Google API key</h2>
+            <div className="estimate alertbar">
+              <div>
+                <span className="title">
+                  Generate missing alt text for all images for only: ${estimate}
+                </span>
+              </div>
+              <a
+                href="https://dev-smart-image-ai.pantheonsite.io/checkout/"
+                target="_blank"
+                rel="noreferrer"
+                className="button-primary">
+                Buy Now
+              </a>
             </div>
-            <a
-              href="https://dev-smart-image-ai.pantheonsite.io/checkout/"
-              target="_blank"
-              rel="noreferrer"
-              className="button-primary">
-              Buy Now
-            </a>
           </div>
-        </div>
-      )}
-      <form onSubmit={updateOptions} onChange={() => setSavable(true)}>
-        <table className="sisa-options-table form-table">
-          <tbody>
-            <tr>
-              <th scope="row">
-                SmartImage Pro
-                <br />
-                API Key
-              </th>
-              <td>
-                <input
-                  name="proApiKey"
-                  type="text"
-                  value={options.proApiKey}
-                  onChange={handleInputChange}
-                />
-                {isGetting && <p>Loading...</p>}
-                <p>
-                  <a
-                    href="https://smart-image-ai.lndo.site/"
-                    target="_blank"
-                    rel="noopener noreferrer">
-                    Get your Smart Image Pro API key here.
-                  </a>
-                </p>
-              </td>
-            </tr>
-            {options.isPro === 0 && (
+        )}
+        <form onSubmit={updateOptions} onChange={() => setSavable(true)}>
+          <table className="sisa-options-table form-table">
+            <tbody>
               <tr>
                 <th scope="row">
-                  Google Cloud Vision <br />
+                  SmartImage Pro
+                  <br />
                   API Key
                 </th>
                 <td>
                   <input
-                    name="apiKey"
+                    name="proApiKey"
                     type="text"
-                    value={options.apiKey}
+                    value={options.proApiKey}
                     onChange={handleInputChange}
+                    placeholder={isGetting ? "Loading..." : "Enter key"}
                   />
-                  {isGetting && <p>Loading...</p>}
+                  {/* {isGetting && <p>Loading...</p>} */}
                   <p>
                     <a
-                      href="https://cloud.google.com/vision/docs/setup"
+                      href="https://smart-image-ai.lndo.site/"
                       target="_blank"
                       rel="noopener noreferrer">
-                      Get your Google Cloud Vision API key here.
+                      Get your Smart Image Pro API key here.
                     </a>
                   </p>
                 </td>
               </tr>
-            )}
-            <tr>
-              <th scope="row">Image Upload</th>
-              <td>
-                <h4>When should alt text for new images be generated?</h4>
-                <p>
-                  <input
-                    name="onUpload"
-                    id="async"
-                    type="radio"
-                    checked={"async" === options.onUpload}
-                    value={"async"}
-                    onChange={handleInputChange}
-                  />
-                  <label htmlFor="async">Generate alt text in the background. (Recommended)</label>
-                  <span className="description">
-                    Alt text creation will run in the background during image upload. You may need
-                    to refresh the screen after upload to see alt text.
-                  </span>
-                </p>
-                <p>
-                  <input
-                    name="onUpload"
-                    id="blocking"
-                    type="radio"
-                    checked={"blocking" === options.onUpload}
-                    value={"blocking"}
-                    onChange={handleInputChange}
-                  />
-                  <label htmlFor="blocking">Generate alt text during upload.</label>
-                  <span className="description">
-                    Uploads will take longer, but this may solve any compatibility issues with other
-                    plugins.
-                  </span>
-                </p>
-                <p>
-                  <input
-                    name="onUpload"
-                    id="none"
-                    type="radio"
-                    checked={"none" === options.onUpload}
-                    value={"none"}
-                    onChange={handleInputChange}
-                  />
-                  <label htmlFor="none">Do not generate alt text on upload.</label>
-                </p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div>
-          <button type="submit" className="button button-primary" disabled={isSaving}>
-            Save Settings
-          </button>
-        </div>
-      </form>
-    </Accordion>
+              {options.isPro === 0 && (
+                <tr>
+                  <th scope="row">
+                    Google Cloud Vision <br />
+                    API Key
+                  </th>
+                  <td>
+                    <input
+                      name="apiKey"
+                      type="text"
+                      value={options.apiKey}
+                      onChange={handleInputChange}
+                      placeholder={isGetting ? "Loading..." : "Enter key"}
+                    />
+                    {/* {isGetting && <p>Loading...</p>} */}
+                    <p>
+                      <a
+                        href="https://cloud.google.com/vision/docs/setup"
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        Get your Google Cloud Vision API key here.
+                      </a>
+                    </p>
+                  </td>
+                </tr>
+              )}
+              {options.hasPro === 1 && (
+                <tr>
+                  <th scope="row">Image Upload</th>
+                  <td>
+                    <h4>When should alt text for new images be generated?</h4>
+                    <p>
+                      <input
+                        name="onUpload"
+                        id="async"
+                        type="radio"
+                        checked={"async" === options.onUpload}
+                        value={"async"}
+                        onChange={handleInputChange}
+                      />
+                      <label htmlFor="async">
+                        Generate alt text in the background. (Recommended)
+                      </label>
+                      <span className="description">
+                        Alt text creation will run in the background during image upload. You may
+                        need to refresh the screen after upload to see alt text.
+                      </span>
+                    </p>
+                    <p>
+                      <input
+                        name="onUpload"
+                        id="blocking"
+                        type="radio"
+                        checked={"blocking" === options.onUpload}
+                        value={"blocking"}
+                        onChange={handleInputChange}
+                      />
+                      <label htmlFor="blocking">Generate alt text during upload.</label>
+                      <span className="description">
+                        Uploads will take longer, but this may solve any compatibility issues with
+                        other plugins.
+                      </span>
+                    </p>
+                    <p>
+                      <input
+                        name="onUpload"
+                        id="none"
+                        type="radio"
+                        checked={"none" === options.onUpload}
+                        value={"none"}
+                        onChange={handleInputChange}
+                      />
+                      <label htmlFor="none">Do not generate alt text on upload.</label>
+                    </p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <div>
+            <button type="submit" className="button" disabled={isSaving}>
+              Save Settings
+            </button>
+          </div>
+        </form>
+      </Accordion>
+      <Dashboard urls={urls} nonce={nonce} options={options} />
+    </>
   )
 }
 

@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react"
 import ReactDOM from "react-dom"
-import Dashboard from "./Dashboard"
 import Settings from "./Settings"
 
 const App = (props) => {
   const [notice, setNotice] = useState([])
   const [estimate, setEstimate] = useState()
   const { urls, nonce } = window.smartimagesearch_ajax
-  let bulkError = null
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [notice])
@@ -26,6 +24,7 @@ const App = (props) => {
         console.log(data)
         setEstimate(data.estimate)
       } catch (error) {
+        console.log(error)
         setNotice(error)
       }
     }
@@ -37,7 +36,6 @@ const App = (props) => {
       <h1>Smart Image AI Alt Text Generator</h1>
       {notice.length > 0 && <Notice notice={notice} />}
       <Settings nonce={nonce} urls={urls} setNotice={setNotice} estimate={estimate} />
-      <Dashboard urls={urls} nonce={nonce} />
     </>
   )
 }

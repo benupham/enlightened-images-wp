@@ -1,6 +1,6 @@
 <?php
 
-abstract class SmartImageSearch_WP_Base
+class SmartImageSearch_WP_Base
 {
     const NAME = 'smart-image-search-ai';
     const PREFIX = 'smartimagesearch';

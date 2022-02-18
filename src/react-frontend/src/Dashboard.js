@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef, useCallback } from "react"
 import "./dashboard.css"
 import { ProgressBar } from "./ProgressBar"
-import { ImageRow } from "./ImageRow"
 import { ImageCard } from "./ImageCard"
+import { BulkTable } from "./BulkTable"
+import { msToTime } from "./helper"
 
-const Dashboard = ({ urls, nonce }) => {
+export const Dashboard = ({ urls, nonce, options }) => {
   const [images, setImages] = useState([])
   const [errorMessage, setErrorMessage] = useState("")
   const [bulkRunning, setBulkRunning] = useState(false)
@@ -57,10 +58,8 @@ const Dashboard = ({ urls, nonce }) => {
 
         const end = Date.now()
         const elapsed = end - start
-        console.log(elapsed)
         const estimate = elapsed * Math.ceil(data.count / data.image_data.length)
-        console.log(estimate)
-        const hourEst = new Date(estimate).toISOString().substring(11, 8)
+        const hourEst = msToTime(estimate)
         setEstimate(hourEst)
       } catch (error) {
         console.log("bulk error", error)
@@ -133,7 +132,9 @@ const Dashboard = ({ urls, nonce }) => {
       <ProgressBar stats={stats} />
       <div className={bulkRunning === true ? "bulk-running sisa-bulk-wrap" : "sisa-bulk-wrap"}>
         {errorMessage && <div className="error settings-error">{errorMessage}</div>}{" "}
-        {images &&
+        {options.hasPro === 1 && images && <BulkTable images={images} />}
+        {options.hasPro === 0 &&
+          images &&
           images.map((image, index) => {
             return <ImageCard image={image} key={index} />
           })}
