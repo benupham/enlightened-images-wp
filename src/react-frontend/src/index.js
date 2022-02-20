@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import ReactDOM from "react-dom"
 import Settings from "./Settings"
+import "./index.css"
 
 const App = (props) => {
   const [notice, setNotice] = useState([])
@@ -34,8 +35,10 @@ const App = (props) => {
   return (
     <>
       <h1>Smart Image AI Alt Text Generator</h1>
-      {notice.length > 0 && <Notice notice={notice} />}
-      <Settings nonce={nonce} urls={urls} setNotice={setNotice} estimate={estimate} />
+      <div className="wrap sisa">
+        {notice.length > 0 && <Notice notice={notice} />}
+        <Settings nonce={nonce} urls={urls} setNotice={setNotice} estimate={estimate} />
+      </div>
     </>
   )
 }
@@ -50,7 +53,7 @@ const Notice = ({ notice }) => {
   )
 }
 
-const dashboardContainer = document.getElementById("smartimagesearch_dashboard")
+const dashboardContainer = document.getElementById("sisa-dashboard")
 
 if (dashboardContainer) {
   ReactDOM.render(<App />, dashboardContainer)

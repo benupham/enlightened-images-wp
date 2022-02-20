@@ -3,7 +3,7 @@
 class SmartImageSearch_SisaPro_Client
 {
 
-  public function get_annotation($file_path, $features = 'WEB_DETECTION')
+  public function get_annotation($file_path, $features = 'WEB_DETECTION,OBJECT_LOCALIZATION')
   {
     error_log("using pro client");
 
@@ -22,7 +22,7 @@ class SmartImageSearch_SisaPro_Client
     }
 
     $data = json_decode(wp_remote_retrieve_body($request));
-    error_log('data on client end');
+    error_log('returned from pro server');
     error_log(print_r($data, true));
 
     if (isset($data->code)) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useLayoutEffect } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import styled from "styled-components"
 
 const AccordionTitle = styled.span`
@@ -12,24 +12,27 @@ const AccordionContent = styled.div`
   transition: 0.5s;
 `
 
-export const Accordion = ({ title, open, children }) => {
+export const Accordion = ({ title, setOpen, open, children }) => {
   const content = useRef(null)
   const [height, setHeight] = useState(0)
   const [direction, setDirection] = useState("right")
 
   const toggleAccordion = () => {
-    setHeight(height === 0 ? content.current.scrollHeight : 0)
-    setDirection(height === 0 ? "down" : "right")
+    setOpen((prev) => !prev)
   }
 
   useEffect(() => {
     if (open) {
-      toggleAccordion()
+      setHeight(content.current.scrollHeight)
+      setDirection("down")
+    } else {
+      setHeight(0)
+      setDirection("right")
     }
-  }, [open])
+  }, [open, children])
 
   return (
-    <>
+    <div className="accordion">
       <h3>
         <AccordionTitle onClick={toggleAccordion}>
           {title}
@@ -39,6 +42,6 @@ export const Accordion = ({ title, open, children }) => {
       <AccordionContent height={height} ref={content}>
         {children}
       </AccordionContent>
-    </>
+    </div>
   )
 }

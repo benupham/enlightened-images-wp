@@ -5,8 +5,6 @@ import { Dashboard } from "./Dashboard"
 import "./settings.css"
 
 const Settings = ({ nonce, urls, setNotice, estimate }) => {
-  const [apiKey, setApiKey] = useState("")
-  const [proApiKey, setProApiKey] = useState("")
   const [options, setOptions] = useState({
     apiKey: "",
     proApiKey: "",
@@ -17,7 +15,7 @@ const Settings = ({ nonce, urls, setNotice, estimate }) => {
     labels: 0,
     landmarks: 0,
     logos: 0,
-    altText: 1
+    altText: 0
   })
   const [isSaving, setSaving] = useState(false)
   const [isGetting, setGetting] = useState(true)
@@ -57,15 +55,15 @@ const Settings = ({ nonce, urls, setNotice, estimate }) => {
           "error"
         ])
       }
-      setApiKey(options.apiKey)
     } else if (json.options.isPro === 0) {
-      setNotice(["Pro API key is invalid. Please check your account.", "error"])
+      setNotice(["EnlightenedImages API key is invalid. Please check your account.", "error"])
     } else if (json.options.isPro === 1) {
-      setNotice([`Options saved, using Smart Image Pro API key.`, "success"])
+      setNotice([`Options saved, using EnlightenedImages Pro API key.`, "success"])
     } else {
       setNotice([`Options saved, using Google API key.`, "success"])
     }
 
+    setOpen(json.options.isPro == 0 ? true : false)
     setSaving(false)
     setSavable(false)
   }
@@ -88,9 +86,8 @@ const Settings = ({ nonce, urls, setNotice, estimate }) => {
     console.log(json)
     setOptions(json.options)
 
-    if (json.options.proApiKey.length == 0) {
-      setOpen(true)
-    }
+    setOpen(json.options.isPro == 0 ? true : false)
+
     if (elapsed) {
       setGetting(false)
     }
@@ -111,140 +108,238 @@ const Settings = ({ nonce, urls, setNotice, estimate }) => {
 
   return (
     <>
-      <Accordion title={"Settings"} open={isOpen}>
-        {options.isPro === 0 && (
-          <div>
-            <h2>Enter your SmartImage API key or Google API key</h2>
-            <div className="estimate alertbar">
+      <div className="settings">
+        <Accordion title={"Settings"} setOpen={setOpen} open={isOpen}>
+          <form onSubmit={updateOptions} onChange={() => setSavable(true)}>
+            {options.isPro === 0 && (
               <div>
-                <span className="title">
-                  Generate missing alt text for all images for only: ${estimate}
-                </span>
+                <h2>Enter your EnlightenedImages API key or Google API key</h2>
               </div>
-              <a
-                href="https://dev-smart-image-ai.pantheonsite.io/checkout/"
-                target="_blank"
-                rel="noreferrer"
-                className="button-primary">
-                Buy Now
-              </a>
-            </div>
-          </div>
-        )}
-        <form onSubmit={updateOptions} onChange={() => setSavable(true)}>
-          <table className="sisa-options-table form-table">
-            <tbody>
-              <tr>
-                <th scope="row">
-                  SmartImage Pro
-                  <br />
-                  API Key
-                </th>
-                <td>
-                  <input
-                    name="proApiKey"
-                    type="text"
-                    value={options.proApiKey}
-                    onChange={handleInputChange}
-                    placeholder={isGetting ? "Loading..." : "Enter key"}
-                  />
-                  {/* {isGetting && <p>Loading...</p>} */}
-                  <p>
-                    <a
-                      href="https://smart-image-ai.lndo.site/"
-                      target="_blank"
-                      rel="noopener noreferrer">
-                      Get your Smart Image Pro API key here.
-                    </a>
-                  </p>
-                </td>
-              </tr>
-              {options.isPro === 0 && (
+            )}
+            <table className="sisa-options-table form-table">
+              <tbody>
                 <tr>
                   <th scope="row">
-                    Google Cloud Vision <br />
+                    EnlightenedImages Pro
+                    <br />
                     API Key
                   </th>
                   <td>
                     <input
-                      name="apiKey"
+                      name="proApiKey"
                       type="text"
-                      value={options.apiKey}
+                      value={options.proApiKey}
                       onChange={handleInputChange}
                       placeholder={isGetting ? "Loading..." : "Enter key"}
                     />
                     {/* {isGetting && <p>Loading...</p>} */}
                     <p>
                       <a
-                        href="https://cloud.google.com/vision/docs/setup"
+                        href="https://smart-image-ai.lndo.site/"
                         target="_blank"
                         rel="noopener noreferrer">
-                        Get your Google Cloud Vision API key here.
+                        Get your EnlightenedImages Pro API key here.
                       </a>
                     </p>
                   </td>
                 </tr>
-              )}
-              {options.hasPro === 1 && (
-                <tr>
-                  <th scope="row">Image Upload</th>
-                  <td>
-                    <h4>When should alt text for new images be generated?</h4>
-                    <p>
+                {options.isPro === 0 && (
+                  <tr>
+                    <th scope="row">
+                      Google Cloud Vision <br />
+                      API Key
+                    </th>
+                    <td>
                       <input
-                        name="onUpload"
-                        id="async"
-                        type="radio"
-                        checked={"async" === options.onUpload}
-                        value={"async"}
+                        name="apiKey"
+                        type="text"
+                        value={options.apiKey}
                         onChange={handleInputChange}
+                        placeholder={isGetting ? "Loading..." : "Enter key"}
                       />
-                      <label htmlFor="async">
-                        Generate alt text in the background. (Recommended)
-                      </label>
-                      <span className="description">
-                        Alt text creation will run in the background during image upload. You may
-                        need to refresh the screen after upload to see alt text.
-                      </span>
-                    </p>
-                    <p>
-                      <input
-                        name="onUpload"
-                        id="blocking"
-                        type="radio"
-                        checked={"blocking" === options.onUpload}
-                        value={"blocking"}
-                        onChange={handleInputChange}
-                      />
-                      <label htmlFor="blocking">Generate alt text during upload.</label>
-                      <span className="description">
-                        Uploads will take longer, but this may solve any compatibility issues with
-                        other plugins.
-                      </span>
-                    </p>
-                    <p>
-                      <input
-                        name="onUpload"
-                        id="none"
-                        type="radio"
-                        checked={"none" === options.onUpload}
-                        value={"none"}
-                        onChange={handleInputChange}
-                      />
-                      <label htmlFor="none">Do not generate alt text on upload.</label>
-                    </p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          <div>
-            <button type="submit" className="button" disabled={isSaving}>
-              Save Settings
-            </button>
+                      {/* {isGetting && <p>Loading...</p>} */}
+                      <p>
+                        <a
+                          href="https://cloud.google.com/vision/docs/setup"
+                          target="_blank"
+                          rel="noopener noreferrer">
+                          Get your Google Cloud Vision API key here.
+                        </a>
+                      </p>
+                    </td>
+                  </tr>
+                )}
+                {options.hasPro === 1 && (
+                  <>
+                    <tr>
+                      <th colSpan={2}>
+                        <h2>Enlightened Images Pro Settings</h2>
+                      </th>
+                    </tr>
+                    <tr>
+                      <th scope="row">Annotation on Image Upload</th>
+                      <td>
+                        <h4>When should analysis of new images be performed?</h4>
+                        <p>
+                          Specify when to automatically create alt text, and other image analysis
+                          features, on newly uploaded images.
+                        </p>
+                        <p>
+                          <input
+                            name="onUpload"
+                            id="async"
+                            type="radio"
+                            checked={"async" === options.onUpload}
+                            value={"async"}
+                            onChange={handleInputChange}
+                          />
+                          <label htmlFor="async">
+                            Generate alt text in the background. (Recommended)
+                          </label>
+                          <span className="description">
+                            Alt text creation will run in the background during image upload. You
+                            may need to refresh the screen after upload to see alt text.
+                          </span>
+                        </p>
+                        <p>
+                          <input
+                            name="onUpload"
+                            id="blocking"
+                            type="radio"
+                            checked={"blocking" === options.onUpload}
+                            value={"blocking"}
+                            onChange={handleInputChange}
+                          />
+                          <label htmlFor="blocking">Generate alt text during upload.</label>
+                          <span className="description">
+                            Uploads will take longer, but this may solve any compatibility issues
+                            with other plugins.
+                          </span>
+                        </p>
+                        <p>
+                          <input
+                            name="onUpload"
+                            id="none"
+                            type="radio"
+                            checked={"none" === options.onUpload}
+                            value={"none"}
+                            onChange={handleInputChange}
+                          />
+                          <label htmlFor="none">Do not generate alt text on upload.</label>
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Annotation Features</th>
+                      <td>
+                        <h4>Select the image analyzation features you want to perform.</h4>
+                        <p>
+                          <input
+                            name="altText"
+                            id="altText"
+                            type="checkbox"
+                            checked={1 === options.altText}
+                            value={"altText"}
+                            onChange={handleInputChange}
+                          />
+                          <label htmlFor="async">Alt text</label>
+                          <span className="description">
+                            Automatically generate image alt text for every image that is missing
+                            it. Also identifies specific objects in images, and similar images on
+                            the web.
+                          </span>
+                        </p>
+                        <p>
+                          <input
+                            name="labels"
+                            id="labels"
+                            type="checkbox"
+                            checked={1 === options.labels}
+                            value={"labels"}
+                            onChange={handleInputChange}
+                          />
+                          <label htmlFor="labels">Labels</label>
+                          <span className="description">
+                            Identify general objects, locations, activities, animal species,
+                            products, and more
+                          </span>
+                        </p>
+                        <p>
+                          <input
+                            name="text"
+                            id="text"
+                            type="checkbox"
+                            checked={1 === options.text}
+                            value={"text"}
+                            onChange={handleInputChange}
+                          />
+                          <label htmlFor="text">Text recognition</label>
+                          <span className="description">
+                            Use optical character recognition (OCR) to extract text from images and
+                            save to image metadata.
+                          </span>
+                        </p>
+                        <p>
+                          <input
+                            name="logos"
+                            id="logos"
+                            type="checkbox"
+                            checked={1 === options.logos}
+                            value={"logos"}
+                            onChange={handleInputChange}
+                          />
+                          <label htmlFor="logos">Logos</label>
+                          <span className="description">
+                            Identify logos from brands, organizations — anything and add it to image
+                            metadata.
+                          </span>
+                        </p>
+                        <p>
+                          <input
+                            name="landmarks"
+                            id="landmarks"
+                            type="checkbox"
+                            checked={1 === options.landmarks}
+                            value={"landmarks"}
+                            onChange={handleInputChange}
+                          />
+                          <label htmlFor="landmarks">Landmarks</label>
+                          <span className="description">
+                            Identify landmarks and add that information to image metadata.
+                          </span>
+                        </p>
+                      </td>
+                    </tr>
+                  </>
+                )}
+              </tbody>
+            </table>
+            <div>
+              <button type="submit" className="button" disabled={isSaving}>
+                Save Settings
+              </button>
+            </div>
+          </form>
+        </Accordion>
+        <div className="sidebar">
+          <div className="estimate">
+            <h3 className="title">
+              Get Your Enlightened
+              <br />
+              Images API Key
+            </h3>
+            <p>Generate missing alt text for all images for only:</p>
+            <h3>${estimate}</h3>
+            <a
+              href="https://dev-smart-image-ai.pantheonsite.io/checkout/"
+              target="_blank"
+              rel="noreferrer"
+              className="button-primary">
+              Buy Now
+            </a>
           </div>
-        </form>
-      </Accordion>
+        </div>
+      </div>
       <Dashboard urls={urls} nonce={nonce} options={options} />
     </>
   )

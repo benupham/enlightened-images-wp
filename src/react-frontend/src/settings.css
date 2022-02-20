@@ -1,10 +1,15 @@
+.settings {
+  display: flex;
+}
+.accordion {
+  width: 80%;
+}
 .sisa-options-table {
   border-collapse: collapse;
   text-align: left;
 }
 .sisa-options-table th {
   vertical-align: top;
-  width: 200px;
 }
 .sisa-options-table td {
   vertical-align: top;
@@ -23,7 +28,6 @@ input[type="radio"]:checked + label {
   color: gray;
   margin-left: 28px;
   margin-top: 4px;
-  width: 600px;
 }
 .sisa-options-table td p {
   margin-bottom: 10px;
@@ -33,19 +37,19 @@ input[type="radio"]:checked + label {
   margin-top: 5px;
 }
 
-.estimate.alertbar {
+.estimate {
   width: fit-content;
   padding: 30px;
-  border: 2px solid #f2da8c;
-  border-radius: 20px;
   background-color: #fff;
-  color: #004785;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
 }
-.estimate.alertbar .title {
+.estimate h3.title {
   font-weight: bold;
   font-size: 1.2em;
+  color: #004785;
 }
-.estimate.alertbar .button-primary {
+.estimate .button-primary {
   font-weight: bold;
   background-color: #f2da8c;
   color: #004785;

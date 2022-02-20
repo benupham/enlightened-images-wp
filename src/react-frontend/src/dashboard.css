@@ -40,6 +40,9 @@
   }
 }
 
+/* div.error {
+  padding: 15px;
+} */
 .error-message {
   margin: 20px;
   color: black;
@@ -80,6 +83,7 @@ button span {
 }
 .sisa-wrapper {
   margin-top: 40px;
+  min-height: 450px;
 }
 .sisa-bulk-wrap {
   display: flex;

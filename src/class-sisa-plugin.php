@@ -7,33 +7,27 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     {
         parent::__construct();
         $this->is_pro = (int) get_option('sisa_pro') === 1 ? true : false;
+        $this->has_pro = true;
+        update_option('sisa_pro_plugin', 1);
         // error_log($this->is_pro);
         $this->set_client();
     }
 
     public function set_client()
     {
-        // if ($this->is_pro) {
-        //     $this->gcv_client = new SmartImageSearch_SisaPro_Client();
-        // } else {
-        //     $this->gcv_client = new SmartImageSearch_GCV_Client();
-        // }
-        $this->gcv_client = new SmartImageSearch_GCV_Client();
+        if ($this->is_pro) {
+            $this->gcv_client = new SmartImageSearch_SisaPro_Client();
+        } else {
+            $this->gcv_client = new SmartImageSearch_GCV_Client();
+        }
     }
 
     public function init()
     {
-        load_plugin_textdomain(
-            self::NAME,
-            false,
-            dirname(plugin_basename(__FILE__)) . '/languages'
-        );
 
         add_action('rest_api_init', $this->get_method('add_sisa_api_routes'));
 
-        if ($this->is_pro && $this->has_pro) {
-            add_filter('wp_generate_attachment_metadata', $this->get_method('process_attachment_upload'), 10, 2);
-        }
+        add_filter('wp_generate_attachment_metadata', $this->get_method('process_attachment_upload'), 10, 2);
     }
 
     public function ajax_init()
@@ -46,9 +40,8 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
     public function admin_init()
     {
-        if ($this->is_pro && $this->has_pro) {
-            add_action('pre_get_posts', $this->get_method('pro_filter_media_search'), 10, 1);
-        }
+
+        add_action('pre_get_posts', $this->get_method('pro_filter_media_search'), 10, 1);
 
         add_action(
             'admin_enqueue_scripts',
@@ -79,7 +72,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     public function add_sisa_api_routes()
     {
         register_rest_route('smartimagesearch/v1', '/proxy', array(
-            // By using this constant we ensure that when the WP_REST_Server changes our readable endpoints will work as intended.
             'methods' => WP_REST_Server::READABLE,
             'callback' => $this->get_method('pro_api_bulk_sisa'),
             'permission_callback' => $this->get_method('sisa_permissions_check'),
@@ -104,7 +96,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 'apiKey' => get_option('sisa_api_key', ''),
                 'proApiKey' => get_option('sisa_pro_api_key') ?: '',
                 'isPro' => (int) get_option('sisa_pro', (int) 0),
-                'hasPro' => (int) get_option('sisa_pro_plugin', (int) 1),
+                'hasPro' => (int) get_option('sisa_pro_plugin', (int) 0),
                 'onUpload' => get_option('sisa_on_media_upload', 'async'),
                 'altText' => (int) get_option('sisa_alt_text', (int) 1),
                 'labels' => (int) get_option('sisa_labels', (int) 0),
@@ -113,7 +105,9 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 'landmarks' => (int) get_option('sisa_landmarks', (int) 0),
             ),
         ), 200);
-        $response->set_headers(array('Cache-Control' => 'no-cache'));
+
+        nocache_headers();
+
         return $response;
     }
 
@@ -122,7 +116,6 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         $json = $request->get_json_params();
         update_option('sisa_api_key', sanitize_text_field(($json['options']['apiKey'])));
         update_option('sisa_pro_api_key', sanitize_text_field(($json['options']['proApiKey'])));
-
         update_option('sisa_on_media_upload', sanitize_text_field(($json['options']['onUpload'])));
         update_option('sisa_alt_text', (int) sanitize_text_field(($json['options']['altText'])));
         update_option('sisa_labels', (int) sanitize_text_field(($json['options']['labels'])));
@@ -157,7 +150,9 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 'landmarks' => (int) get_option('sisa_landmarks', (int) 0),
             ),
         ), 200);
-        $response->set_headers(array('Cache-Control' => 'no-cache'));
+
+        nocache_headers();
+
         return $response;
     }
 
@@ -259,7 +254,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
             if (is_wp_error($gcv_result)) {
                 ++$errors;
-                $annotation_data['gcv_data'] = $gcv_result;
+                $annotation_data['error'] = $gcv_result;
                 $response[] = $annotation_data;
                 continue;
             }
@@ -285,7 +280,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             ),
         ), 200);
 
-        $response->set_headers(array('Cache-Control' => 'no-cache'));
+        nocache_headers();
 
         return $response;
     }
@@ -304,7 +299,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
         $annotation_options = array(
             '_wp_attachment_image_alt' => (int) get_option('sisa_alt_text', (int) 1),
-            'sisa_labels' => 1, //(int) get_option('sisa_labels', (int) 0),
+            'sisa_labels' => (int) get_option('sisa_labels', (int) 0),
             'sisa_text' => (int) get_option('sisa_text', (int) 0),
             'sisa_logos' => (int) get_option('sisa_logos', (int) 0),
             'sisa_landmarks' => (int) get_option('sisa_landmarks', (int) 0),
@@ -388,14 +383,15 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $image = $this->get_filepath($p);
 
             $features = $this->pro_get_annotation_features($annotation_options);
-            $gcv_result = $this->gcv_client->get_annotation($image, $features);
+            $gcv_result = $this->gcv_client->get_annotation($image, implode(',', $features));
 
-            // error_log("result from server endpoint");
-            // error_log(print_r($gcv_result, true));
+            error_log("result from server endpoint");
+            error_log(print_r($gcv_result, true));
 
             if (is_wp_error($gcv_result)) {
+                error_log('response was a wp error');
                 ++$errors;
-                $annotation_data['gcv_data'] = $gcv_result;
+                $annotation_data['error'] = $gcv_result;
                 $response[] = $annotation_data;
                 continue;
             }
@@ -418,12 +414,12 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             'success' => true,
             'body' => array(
                 'image_data' => $response,
-                'count' => $images_cnt > $posts_per_page ? $images_cnt - $posts_per_page : $images_cnt,
+                'count' => $images_cnt - $max_posts,
                 'errors' => $errors,
             ),
         ), 200);
 
-        $response->set_headers(array('Cache-Control' => 'no-cache'));
+        nocache_headers();
 
         return $response;
     }
@@ -484,7 +480,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         $meta_query = array(
             'relation' => 'OR',
             array(
-                'key' => 'smartimagesearch',
+                'key' => 'sisa_search',
                 'value' => $search,
                 'compare' => 'LIKE'
             ),
@@ -705,13 +701,14 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $attachment_id = intval($_POST['attachment_id']);
             $image_file_path = $this->get_filepath($attachment_id);
 
-            $gcv_client = new SmartImageSearch_GCV_Client();
+            $gcv_client = $this->gcv_client;
             $gcv_result = $gcv_client->get_annotation($image_file_path);
 
             if (!is_wp_error($gcv_result)) {
 
                 $cleaned_data = $this->clean_up_gcv_data($gcv_result);
                 $this->update_image_alt_text($cleaned_data, $attachment_id, true);
+                $this->pro_update_attachment_meta($cleaned_data, $attachment_id);
             }
         }
         exit();
@@ -762,8 +759,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     public function smartimagesearch_settings_do_page()
     {
 ?>
-        <div id="smartimagesearch_settings"></div>
-        <div id="smartimagesearch_dashboard"></div>
+        <div id="sisa-dashboard"></div>
 <?php
     }
 

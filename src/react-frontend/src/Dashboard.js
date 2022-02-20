@@ -64,7 +64,7 @@ export const Dashboard = ({ urls, nonce, options }) => {
         setEstimate(hourEst)
       } catch (error) {
         console.log("bulk error", error)
-        // setErrorMessage(error)
+        setErrorMessage(error)
         break
       }
       bulkRemaining.current = data.count
@@ -75,10 +75,11 @@ export const Dashboard = ({ urls, nonce, options }) => {
         errors: prev.errors + data.errors,
         remaining: data.count
       }))
+      console.log(stats)
       setImages((prev) => [...prev, ...data.image_data])
 
       if (data.errors === data.image_data.length) {
-        const errors = data.image_data[0].gcv_data.errors
+        const errors = data.image_data[0].error.errors
         const errorMsg = errors[Object.keys(errors)[0]]
 
         setErrorMessage(
@@ -132,7 +133,11 @@ export const Dashboard = ({ urls, nonce, options }) => {
 
       <ProgressBar stats={stats} />
       <div className={bulkRunning === true ? "bulk-running sisa-bulk-wrap" : "sisa-bulk-wrap"}>
-        {errorMessage && <div className="error settings-error">{errorMessage}</div>}{" "}
+        {errorMessage && (
+          <div className="error settings-error">
+            <p>{errorMessage}</p>
+          </div>
+        )}{" "}
         {options.hasPro === 1 && images && <BulkTable images={images} />}
         {options.hasPro === 0 &&
           images &&

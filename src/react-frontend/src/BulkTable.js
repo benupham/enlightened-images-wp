@@ -1,16 +1,17 @@
 import React from "react"
 import { ImageRow } from "./ImageRow"
+import "./bulktable.css"
 
 export const BulkTable = ({ images }) => {
   return (
     <table className="sisa_bulk_table">
       <thead>
         <tr>
-          <th>Image</th>
-          <th>File</th>
-          <th>Alt Text</th>
-          <th>Smart Meta</th>
-          <th>Status</th>
+          <th className="thumbnail">Image</th>
+          <th className="filename">File</th>
+          <th className="alt-text">Alt Text</th>
+          <th className="sisa-meta">Annotation Metadata</th>
+          <th className="status">Status</th>
         </tr>
       </thead>
       <tbody>
