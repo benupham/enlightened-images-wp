@@ -49,6 +49,7 @@ export const Dashboard = ({ urls, nonce, options }) => {
       try {
         const start = Date.now()
 
+        console.log(`${urls.proxy}?start=${startTime}`)
         response = await fetch(`${urls.proxy}?start=${startTime}`, {
           headers: new Headers({ "X-WP-Nonce": nonce, "Cache-Control": "no-cache" })
         })
@@ -58,8 +59,8 @@ export const Dashboard = ({ urls, nonce, options }) => {
 
         const end = Date.now()
         const elapsed = end - start
-        const estimate = elapsed * Math.ceil(data.count / data.image_data.length)
-        const hourEst = msToTime(estimate)
+        const msEst = elapsed * Math.ceil(data.count / data.image_data.length)
+        const hourEst = msToTime(msEst)
         setEstimate(hourEst)
       } catch (error) {
         console.log("bulk error", error)

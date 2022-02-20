@@ -7,17 +7,18 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     {
         parent::__construct();
         $this->is_pro = (int) get_option('sisa_pro') === 1 ? true : false;
-        error_log($this->is_pro);
+        // error_log($this->is_pro);
         $this->set_client();
     }
 
     public function set_client()
     {
-        if ($this->is_pro) {
-            $this->gcv_client = new SmartImageSearch_SisaPro_Client();
-        } else {
-            $this->gcv_client = new SmartImageSearch_GCV_Client();
-        }
+        // if ($this->is_pro) {
+        //     $this->gcv_client = new SmartImageSearch_SisaPro_Client();
+        // } else {
+        //     $this->gcv_client = new SmartImageSearch_GCV_Client();
+        // }
+        $this->gcv_client = new SmartImageSearch_GCV_Client();
     }
 
     public function init()
@@ -30,7 +31,9 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
         add_action('rest_api_init', $this->get_method('add_sisa_api_routes'));
 
-        add_filter('wp_generate_attachment_metadata', $this->get_method('process_attachment_upload'), 10, 2);
+        if ($this->is_pro && $this->has_pro) {
+            add_filter('wp_generate_attachment_metadata', $this->get_method('process_attachment_upload'), 10, 2);
+        }
     }
 
     public function ajax_init()
@@ -43,6 +46,9 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
     public function admin_init()
     {
+        if ($this->is_pro && $this->has_pro) {
+            add_action('pre_get_posts', $this->get_method('pro_filter_media_search'), 10, 1);
+        }
 
         add_action(
             'admin_enqueue_scripts',
@@ -75,7 +81,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         register_rest_route('smartimagesearch/v1', '/proxy', array(
             // By using this constant we ensure that when the WP_REST_Server changes our readable endpoints will work as intended.
             'methods' => WP_REST_Server::READABLE,
-            'callback' => $this->get_method('api_bulk_sisa'),
+            'callback' => $this->get_method('pro_api_bulk_sisa'),
             'permission_callback' => $this->get_method('sisa_permissions_check'),
         ));
         register_rest_route('smartimagesearch/v1', '/settings', array(
@@ -100,11 +106,11 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 'isPro' => (int) get_option('sisa_pro', (int) 0),
                 'hasPro' => (int) get_option('sisa_pro_plugin', (int) 1),
                 'onUpload' => get_option('sisa_on_media_upload', 'async'),
-                'altText' => get_option('sisa_alt_text', (int) 1),
-                'labels' => get_option('sisa_labels', (int) 0),
-                'text' => get_option('sisa_text', (int) 0),
-                'logos' => get_option('sisa_logos', (int) 0),
-                'landmarks' => get_option('sisa_landmarks', (int) 0),
+                'altText' => (int) get_option('sisa_alt_text', (int) 1),
+                'labels' => (int) get_option('sisa_labels', (int) 0),
+                'text' => (int) get_option('sisa_text', (int) 0),
+                'logos' => (int) get_option('sisa_logos', (int) 0),
+                'landmarks' => (int) get_option('sisa_landmarks', (int) 0),
             ),
         ), 200);
         $response->set_headers(array('Cache-Control' => 'no-cache'));
@@ -118,11 +124,11 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         update_option('sisa_pro_api_key', sanitize_text_field(($json['options']['proApiKey'])));
 
         update_option('sisa_on_media_upload', sanitize_text_field(($json['options']['onUpload'])));
-        update_option('sisa_alt_text', sanitize_text_field(($json['options']['altText'])));
-        update_option('sisa_labels', sanitize_text_field(($json['options']['labels'])));
-        update_option('sisa_text', sanitize_text_field(($json['options']['text'])));
-        update_option('sisa_logos', sanitize_text_field(($json['options']['logos'])));
-        update_option('sisa_landmarks', sanitize_text_field(($json['options']['landmarks'])));
+        update_option('sisa_alt_text', (int) sanitize_text_field(($json['options']['altText'])));
+        update_option('sisa_labels', (int) sanitize_text_field(($json['options']['labels'])));
+        update_option('sisa_text', (int) sanitize_text_field(($json['options']['text'])));
+        update_option('sisa_logos', (int) sanitize_text_field(($json['options']['logos'])));
+        update_option('sisa_landmarks', (int) sanitize_text_field(($json['options']['landmarks'])));
 
         $sisa_pro = $this->check_pro_api_key(sanitize_text_field(($json['options']['proApiKey'])));
 
@@ -142,56 +148,17 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 'apiKey' => $json['options']['apiKey'],
                 'proApiKey' => $json['options']['proApiKey'],
                 'isPro' => (int) get_option('sisa_pro'),
+                'hasPro' => (int) get_option('sisa_pro_plugin', (int) 1),
                 'onUpload' => get_option('sisa_on_media_upload', 'async'),
-                'altText' => get_option('sisa_alt_text', (int) 1),
-                'labels' => get_option('sisa_labels', (int) 0),
-                'text' => get_option('sisa_text', (int) 0),
-                'logos' => get_option('sisa_logos', (int) 0),
-                'landmarks' => get_option('sisa_landmarks', (int) 0),
+                'altText' => (int) get_option('sisa_alt_text', (int) 1),
+                'labels' => (int) get_option('sisa_labels', (int) 0),
+                'text' => (int) get_option('sisa_text', (int) 0),
+                'logos' => (int) get_option('sisa_logos', (int) 0),
+                'landmarks' => (int) get_option('sisa_landmarks', (int) 0),
             ),
         ), 200);
         $response->set_headers(array('Cache-Control' => 'no-cache'));
         return $response;
-    }
-
-    public function check_pro_api_key($pro_api_key)
-    {
-        $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/account?api_key=' . $pro_api_key, array(
-            'headers' => array('Content-Type' => 'application/json'),
-            'method' => 'GET',
-        ));
-
-        $data = json_decode(wp_remote_retrieve_body($response));
-
-        if (isset($data) && isset($data->success)) {
-            return true;
-        }
-        return false;
-    }
-
-    public function get_estimate($image_count)
-    {
-        $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/estimate?imageCount=' . $image_count, array(
-            'headers' => array('Content-Type' => 'application/json'),
-            'method' => 'GET',
-        ));
-
-        $data = json_decode(wp_remote_retrieve_body($response));
-
-        if (isset($data) && isset($data->success)) {
-            return $data->cost;
-        }
-        return new WP_Error('estimate_unavailable', 'Could not generate Pro estimate');
-    }
-
-    public function sisa_permissions_check()
-    {
-        // Restrict endpoint to only users who have the capability to manage options.
-        if (current_user_can('manage_options')) {
-            return true;
-        }
-
-        return new WP_Error('rest_forbidden', esc_html__('You do not have permissions to do that.', 'smartimagesearch'), array('status' => 401));
     }
 
     public function api_bulk_sisa($request)
@@ -287,8 +254,8 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             }
 
             $gcv_result = $this->gcv_client->get_annotation($image);
-            error_log("result from server endpoint");
-            error_log(print_r($gcv_result, true));
+            // error_log("result from server endpoint");
+            // error_log(print_r($gcv_result, true));
 
             if (is_wp_error($gcv_result)) {
                 ++$errors;
@@ -335,61 +302,48 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $now = (int) $start;
         }
 
-        $posts_per_page = 2;
-
-        $args = array(
-            'post_type' => 'attachment',
-            'post_status' => 'inherit',
-            'paged' => 1,
-            'posts_per_page' => $posts_per_page,
-            'date_query' => array(
-                'before' => date('Y-m-d H:i:s', $now),
-            ),
-            'meta_query'  => array(
-                'relation' => 'OR'
-            ),
-            'post_mime_type' => array('image/jpeg', 'image/gif', 'image/png', 'image/bmp'),
-            'fields' => 'ids'
-        );
-
-
         $annotation_options = array(
-            '_wp_attachment_image_alt' => get_option('sisa_alt_text', (int) 1),
-            'sisa_labels' => get_option('sisa_labels', (int) 0),
-            'sisa_text' => get_option('sisa_text', (int) 0),
-            'sisa_logos' => get_option('sisa_logos', (int) 0),
-            'sisa_landmarks' => get_option('sisa_landmarks', (int) 0),
+            '_wp_attachment_image_alt' => (int) get_option('sisa_alt_text', (int) 1),
+            'sisa_labels' => 1, //(int) get_option('sisa_labels', (int) 0),
+            'sisa_text' => (int) get_option('sisa_text', (int) 0),
+            'sisa_logos' => (int) get_option('sisa_logos', (int) 0),
+            'sisa_landmarks' => (int) get_option('sisa_landmarks', (int) 0),
         );
+
+        $meta_query = '';
 
         foreach ($annotation_options as $key => $value) {
             if ($value === 1) {
-                $args['meta_query'][] = array(
-                    'key' => $key,
-                    'value' => '',
-                    'compare' => '='
-                );
-                $args['meta_query'][] = array(
-                    'key' => $key,
-                    'compare' => 'NOT EXISTS'
-                );
+                $meta_query .= "'" . $key . "',";
             }
         }
+        $meta_query = substr($meta_query, 0, -1);
 
-        $query = new WP_Query($args);
+        global $wpdb;
+        $images = $wpdb->get_results(
+            "
+            SELECT post_id 
+            FROM $wpdb->postmeta
+            WHERE meta_key IN ($meta_query)
+            AND meta_value IS NULL OR meta_value = '';
+            "
+        );
+
+        $images_cnt = count($images);
 
         if (false === $start) {
             return new WP_REST_RESPONSE(array(
                 'success' => true,
                 'body' => array(
-                    'count' => $query->found_posts,
+                    'count' => $images_cnt,
                     'errors' => 0,
                     'start' => $now,
-                    'estimate' => $this->get_estimate($query->found_posts)
+                    'estimate' => $this->get_estimate($images_cnt)
                 ),
             ), 200);
         }
 
-        if (!$query->have_posts()) {
+        if ($images_cnt === 0) {
             return new WP_REST_RESPONSE(array(
                 'success' => true,
                 'body' => array(
@@ -401,10 +355,15 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
         $response = array();
         $errors = 0;
+        $posts_per_page = 2;
+        $max_posts = $posts_per_page > $images_cnt ? $images_cnt : $posts_per_page;
 
-        foreach ($query->posts as $p) {
+        for ($i = 0; $i < $max_posts; $i++) {
+
+            $p = $images[$i]->post_id;
 
             $annotation_data = array();
+            $gcv_result = array();
 
             $annotation_data['thumbnail'] = wp_get_attachment_image_url($p);
             $annotation_data['attachmentURL'] = '/wp-admin/upload.php?item=' . $p;
@@ -414,14 +373,10 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
             $image = null;
 
-            if ($this->is_pro) {
-                if (has_image_size('medium')) {
-                    $image = wp_get_attachment_image_url($p, 'medium');
-                } else {
-                    $image = wp_get_original_image_url($p);
-                }
+            if (has_image_size('medium')) {
+                $image = wp_get_attachment_image_url($p, 'medium');
             } else {
-                $image = $this->get_filepath($p);
+                $image = wp_get_original_image_url($p);
             }
 
             if ($image === false) {
@@ -429,13 +384,14 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 continue;
             }
 
-            if ($this->is_pro && $this->has_pro) {
-                $features = $this->get_annotation_features($annotation_options);
-            }
+            // Temp for development 
+            $image = $this->get_filepath($p);
 
-            $gcv_result = $this->gcv_client->get_annotation($image);
-            error_log("result from server endpoint");
-            error_log(print_r($gcv_result, true));
+            $features = $this->pro_get_annotation_features($annotation_options);
+            $gcv_result = $this->gcv_client->get_annotation($image, $features);
+
+            // error_log("result from server endpoint");
+            // error_log(print_r($gcv_result, true));
 
             if (is_wp_error($gcv_result)) {
                 ++$errors;
@@ -446,12 +402,14 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
             $cleaned_data = $this->clean_up_gcv_data($gcv_result);
             $alt = $this->update_image_alt_text($cleaned_data, $p, true);
+            $meta = $this->pro_update_attachment_meta($cleaned_data, $p);
 
-            if (is_wp_error($alt)) {
+            if (is_wp_error($alt) || is_wp_error($meta)) {
                 ++$errors;
             }
 
             $annotation_data['alt_text'] = $alt;
+            $annotation_data['meta_data'] = $meta;
 
             $response[] = $annotation_data;
         }
@@ -460,7 +418,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             'success' => true,
             'body' => array(
                 'image_data' => $response,
-                'count' => $query->found_posts - count($query->posts),
+                'count' => $images_cnt > $posts_per_page ? $images_cnt - $posts_per_page : $images_cnt,
                 'errors' => $errors,
             ),
         ), 200);
@@ -470,7 +428,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         return $response;
     }
 
-    public function get_annotation_features($annotation_options)
+    public function pro_get_annotation_features($annotation_options)
     {
         $features = array();
         $feature_lookup = array(
@@ -488,6 +446,76 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             }
         }
         return $features;
+    }
+
+    public function pro_filter_media_search($query)
+    {
+        if (true != get_option('sisa_use_smartsearch', true)) return;
+
+        if (!$query->is_search) return;
+        $post_type = $query->get('post_type');
+
+        if (is_array($post_type) || $post_type !== 'attachment') return;
+
+        $search = $query->get('s');
+        if (empty($search)) return;
+
+        $query->set('s', null);
+
+        // This is so we search attachments by sisa meta, and filename, and title. 
+        // https://wordpress.stackexchange.com/questions/78649/using-meta-query-meta-query-with-a-search-query-s
+        add_filter('get_meta_sql', function ($sql) use ($search) {
+            global $wpdb;
+
+            // Only run once:
+            static $nr = 0;
+            if (0 != $nr++) return $sql;
+
+            // Modified WHERE
+            $sql['where'] = sprintf(
+                " AND ( %s OR %s ) ",
+                $wpdb->prepare("{$wpdb->posts}.post_title like '%%%s%%'", $search),
+                mb_substr($sql['where'], 5, mb_strlen($sql['where']))
+            );
+
+            return $sql;
+        });
+
+        $meta_query = array(
+            'relation' => 'OR',
+            array(
+                'key' => 'smartimagesearch',
+                'value' => $search,
+                'compare' => 'LIKE'
+            ),
+            array(
+                'key' => '_wp_attached_file',
+                'value' => $search,
+                'compare' => 'LIKE'
+            )
+        );
+        $query->set('meta_query', $meta_query);
+    }
+
+    public function pro_update_attachment_meta($cleaned_data, $p)
+    {
+        $sisa_search = array();
+
+        foreach ($cleaned_data as $key => $value) {
+            if (is_array($value) && !empty($value)) {
+                $sisa_search = array_merge($sisa_search, $value);
+            }
+            if (is_string($value) && !empty($value)) {
+                $sisa_search[] = $value;
+            }
+            update_post_meta($p, $key, $value);
+        }
+
+        $sisa_search = array_unique($sisa_search);
+        $sisa_search_string = implode(' ', $sisa_search);
+        update_post_meta($p, 'sisa_search', $sisa_search_string);
+
+        return $sisa_search_string;
     }
 
     public function get_filepath($p)
@@ -518,7 +546,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
         if (isset($data->landmarkAnnotations) && !empty($data->landmarkAnnotations)) {
             if ($data->landmarkAnnotations[0]->score >= $min_score) {
-                $cleaned_data['landmark'] = $data->landmarkAnnotations[0]->description;
+                $cleaned_data['sisa_landmarks'] = $data->landmarkAnnotations[0]->description;
             }
         }
         if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
@@ -528,7 +556,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                     $labels[] = strtolower($label->description);
                 }
             }
-            $cleaned_data['labels'] = array_values(array_unique($labels));
+            $cleaned_data['sisa_labels'] = array_values(array_unique($labels));
         }
         if (isset($data->webDetection) && !empty($data->webDetection)) {
             $web_entities = array();
@@ -536,7 +564,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 if (isset($entity->description) && $entity->score >= $min_score)
                     $web_entities[] = strtolower($entity->description);
             }
-            $cleaned_data['webEntities'] = array_values(array_unique($web_entities));
+            $cleaned_data['sisa_web_entities'] = array_values(array_unique($web_entities));
             if (isset($data->webDetection->bestGuessLabels) && !empty($data->webDetection->bestGuessLabels)) {
                 $web_labels = array();
                 foreach ($data->webDetection->bestGuessLabels as $web_label) {
@@ -544,7 +572,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                         $web_labels[] = $web_label->label;
                     }
                 }
-                $cleaned_data['webLabels'] = array_values(array_unique($web_labels));
+                $cleaned_data['sisa_web_labels'] = array_values(array_unique($web_labels));
             }
         }
         if (isset($data->localizedObjectAnnotations) && !empty($data->localizedObjectAnnotations)) {
@@ -554,7 +582,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                     $objects[] = strtolower($object->name);
                 }
             }
-            $cleaned_data['objects'] =  array_values(array_unique($objects));
+            $cleaned_data['sisa_objects'] =  array_values(array_unique($objects));
         }
         if (isset($data->logoAnnotations) && !empty($data->logoAnnotations)) {
             $logos = array();
@@ -563,11 +591,11 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                     $logos[] = $logo->description;
                 }
             }
-            $cleaned_data['logos'] = array_values(array_unique($logos));
+            $cleaned_data['sisa_logos'] = array_values(array_unique($logos));
         }
         if (isset($data->textAnnotations) && !empty($data->textAnnotations)) {
             $text = $data->textAnnotations[0]->description;
-            $cleaned_data['text'] = $text;
+            $cleaned_data['sisa_text'] = $text;
         }
         return $cleaned_data;
     }
@@ -577,12 +605,12 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         $success = true;
         $alt = '';
 
-        if (is_array($cleaned_data['webLabels']) && !empty($cleaned_data['webLabels'][0])) {
-            $alt = $cleaned_data['webLabels'][0];
-        } elseif (is_array($cleaned_data['webEntities']) && !empty($cleaned_data['webEntities'][0])) {
-            $alt = $cleaned_data['webEntities'][0];
+        if (is_array($cleaned_data['sisa_web_labels']) && !empty($cleaned_data['sisa_web_labels'][0])) {
+            $alt = $cleaned_data['sisa_web_labels'][0];
+        } elseif (is_array($cleaned_data['sisa_web_entities']) && !empty($cleaned_data['sisa_web_entities'][0])) {
+            $alt = $cleaned_data['sisa_web_entities'][0];
         } else {
-            $alt = $cleaned_data['objects'][0];
+            $alt = $cleaned_data['sisa_objects'][0];
         }
 
         if (!empty($existing = get_post_meta($p, '_wp_attachment_image_alt', true))) {
@@ -726,8 +754,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         global $wpdb;
         $results = $wpdb->delete(
             $wpdb->prefix . 'postmeta',
-            array('meta_key' => '_wp_attachment_image_alt'),
-            array('%s')
+            array('meta_key' => '_wp_attachment_image_alt')
         );
         return $results;
     }
@@ -738,5 +765,84 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         <div id="smartimagesearch_settings"></div>
         <div id="smartimagesearch_dashboard"></div>
 <?php
+    }
+
+    //pro
+    public function delete_sisa_meta($metadata, $attachment_id)
+    {
+        global $wpdb;
+        $wpdb->delete(
+            $wpdb->prefix . 'postmeta',
+            array('meta_key' => 'sisa_search', 'post_id' => $attachment_id),
+            array('%s', '%d')
+        );
+
+        $wpdb->delete(
+            $wpdb->prefix . 'postmeta',
+            array('meta_key' => 'sisa_meta', 'post_id' => $attachment_id),
+            array('%s', '%d')
+        );
+
+        return $metadata;
+    }
+
+    //pro
+    public function delete_all_sisa_meta()
+    {
+        global $wpdb;
+        $results = $wpdb->delete(
+            $wpdb->prefix . 'postmeta',
+            array('meta_key' => 'sisa_search'),
+            array('%s')
+        );
+
+        $results = $wpdb->delete(
+            $wpdb->prefix . 'postmeta',
+            array('meta_key' => 'sisa_meta'),
+            array('%s')
+        );
+
+        return $results;
+    }
+
+
+    public function check_pro_api_key($pro_api_key)
+    {
+        $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/account?api_key=' . $pro_api_key, array(
+            'headers' => array('Content-Type' => 'application/json'),
+            'method' => 'GET',
+        ));
+
+        $data = json_decode(wp_remote_retrieve_body($response));
+
+        if (isset($data) && isset($data->success)) {
+            return true;
+        }
+        return false;
+    }
+
+    public function get_estimate($image_count)
+    {
+        $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/estimate?imageCount=' . $image_count, array(
+            'headers' => array('Content-Type' => 'application/json'),
+            'method' => 'GET',
+        ));
+
+        $data = json_decode(wp_remote_retrieve_body($response));
+
+        if (isset($data) && isset($data->success)) {
+            return $data->cost;
+        }
+        return new WP_Error('estimate_unavailable', 'Could not generate Pro estimate');
+    }
+
+    public function sisa_permissions_check()
+    {
+        // Restrict endpoint to only users who have the capability to manage options.
+        if (current_user_can('manage_options')) {
+            return true;
+        }
+
+        return new WP_Error('rest_forbidden', esc_html__('You do not have permissions to do that.', 'smartimagesearch'), array('status' => 401));
     }
 }

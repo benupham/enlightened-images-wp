@@ -65,7 +65,7 @@ class SmartImageSearch_GCV_Client
         }
 
         $annotation = $data->responses[0];
-        if ($annotation->error) {
+        if (isset($annotation->error)) {
             return new WP_Error($annotation->error->code, $annotation->error->message);
         }
 
