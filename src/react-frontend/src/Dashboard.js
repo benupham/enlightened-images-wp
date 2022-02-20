@@ -120,12 +120,12 @@ export const Dashboard = ({ urls, nonce, options }) => {
       {estimate && <h3>Time remaining: {estimate}</h3>}
 
       {!bulkRunning && !paused && stats.remaining > 0 && (
-        <button className="button button-primary" onClick={handleBulkAnnotate}>
+        <button className="button button-primary trigger-bulk" onClick={handleBulkAnnotate}>
           Start Bulk
         </button>
       )}
       {(paused || bulkRunning) && (
-        <button className="button" onClick={handlePause}>
+        <button className="button trigger-bulk" onClick={handlePause}>
           {paused ? (bulkRunning ? "Stopping..." : "Resume") : "Stop"}
         </button>
       )}

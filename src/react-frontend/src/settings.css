@@ -1,8 +1,6 @@
 .settings {
   display: flex;
-}
-.accordion {
-  width: 80%;
+  justify-content: space-between;
 }
 .sisa-options-table {
   border-collapse: collapse;
@@ -35,22 +33,4 @@ input[type="radio"]:checked + label {
 
 .sisa-options-table h4 {
   margin-top: 5px;
-}
-
-.estimate {
-  width: fit-content;
-  padding: 30px;
-  background-color: #fff;
-  border: 1px solid #e5e5e5;
-  box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
-}
-.estimate h3.title {
-  font-weight: bold;
-  font-size: 1.2em;
-  color: #004785;
-}
-.estimate .button-primary {
-  font-weight: bold;
-  background-color: #f2da8c;
-  color: #004785;
 }

@@ -1,0 +1,30 @@
+.sidebar {
+  width: 20%;
+  max-width: 350px;
+  min-width: 200px;
+}
+.sidebar > div {
+  display: block;
+  padding: 30px;
+  margin: 10px 0;
+  background-color: #fff;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
+}
+.sidebar h3.title {
+  font-weight: bold;
+  font-size: 1.2em;
+  color: #004785;
+}
+.sidebar .button-primary {
+  font-weight: bold;
+  background-color: #f2da8c;
+  color: #004785;
+}
+.sidebar .price {
+  font-weight: bold;
+  font-size: 2em;
+  color: #004785;
+  display: block;
+  margin: 20px 0;
+}

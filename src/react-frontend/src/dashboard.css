@@ -40,9 +40,6 @@
   }
 }
 
-/* div.error {
-  padding: 15px;
-} */
 .error-message {
   margin: 20px;
   color: black;
@@ -92,4 +89,8 @@ button span {
   align-content: center;
   justify-content: flex-start;
   align-items: center;
+}
+button.button-primary.trigger-bulk,
+button.trigger-bulk {
+  font-size: 1.5em !important;
 }

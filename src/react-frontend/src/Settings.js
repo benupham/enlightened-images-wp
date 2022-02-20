@@ -3,14 +3,15 @@ import { Accordion } from "./Accordion"
 import { checkApiKey } from "./api"
 import { Dashboard } from "./Dashboard"
 import "./settings.css"
+import { Sidebar } from "./Sidebar"
 
-const Settings = ({ nonce, urls, setNotice, estimate }) => {
+const Settings = ({ nonce, urls, setNotice, estimate, count }) => {
   const [options, setOptions] = useState({
     apiKey: "",
     proApiKey: "",
     onUpload: "async",
-    isPro: 0,
-    hasPro: 0,
+    isPro: null,
+    hasPro: null,
     text: 0,
     labels: 0,
     landmarks: 0,
@@ -58,7 +59,7 @@ const Settings = ({ nonce, urls, setNotice, estimate }) => {
     } else if (json.options.isPro === 0) {
       setNotice(["EnlightenedImages API key is invalid. Please check your account.", "error"])
     } else if (json.options.isPro === 1) {
-      setNotice([`Options saved, using EnlightenedImages Pro API key.`, "success"])
+      setNotice([`Options saved, using EnlightenedImages API key.`, "success"])
     } else {
       setNotice([`Options saved, using Google API key.`, "success"])
     }
@@ -109,238 +110,230 @@ const Settings = ({ nonce, urls, setNotice, estimate }) => {
   return (
     <>
       <div className="settings">
-        <Accordion title={"Settings"} setOpen={setOpen} open={isOpen}>
-          <form onSubmit={updateOptions} onChange={() => setSavable(true)}>
-            {options.isPro === 0 && (
-              <div>
-                <h2>Enter your EnlightenedImages API key or Google API key</h2>
-              </div>
-            )}
-            <table className="sisa-options-table form-table">
-              <tbody>
-                <tr>
-                  <th scope="row">
-                    EnlightenedImages Pro
-                    <br />
-                    API Key
-                  </th>
-                  <td>
-                    <input
-                      name="proApiKey"
-                      type="text"
-                      value={options.proApiKey}
-                      onChange={handleInputChange}
-                      placeholder={isGetting ? "Loading..." : "Enter key"}
-                    />
-                    {/* {isGetting && <p>Loading...</p>} */}
-                    <p>
-                      <a
-                        href="https://smart-image-ai.lndo.site/"
-                        target="_blank"
-                        rel="noopener noreferrer">
-                        Get your EnlightenedImages Pro API key here.
-                      </a>
-                    </p>
-                  </td>
-                </tr>
-                {options.isPro === 0 && (
+        <div className="dashboard">
+          <Accordion title={"Settings"} setOpen={setOpen} open={isOpen}>
+            <form onSubmit={updateOptions} onChange={() => setSavable(true)}>
+              {options.isPro === 0 && (
+                <div>
+                  <h2>Enter your EnlightenedImages API key or Google API key</h2>
+                </div>
+              )}
+              <table className="sisa-options-table form-table">
+                <tbody>
                   <tr>
                     <th scope="row">
-                      Google Cloud Vision <br />
+                      EnlightenedImages
+                      <br />
                       API Key
                     </th>
                     <td>
                       <input
-                        name="apiKey"
+                        name="proApiKey"
                         type="text"
-                        value={options.apiKey}
+                        value={options.proApiKey}
                         onChange={handleInputChange}
                         placeholder={isGetting ? "Loading..." : "Enter key"}
                       />
                       {/* {isGetting && <p>Loading...</p>} */}
                       <p>
                         <a
-                          href="https://cloud.google.com/vision/docs/setup"
+                          href="https://smart-image-ai.lndo.site/"
                           target="_blank"
                           rel="noopener noreferrer">
-                          Get your Google Cloud Vision API key here.
+                          Get your EnlightenedImages API key here.
                         </a>
                       </p>
                     </td>
                   </tr>
-                )}
-                {options.hasPro === 1 && (
-                  <>
+                  {options.isPro === 0 && (
                     <tr>
-                      <th colSpan={2}>
-                        <h2>Enlightened Images Pro Settings</h2>
+                      <th scope="row">
+                        Google Cloud Vision <br />
+                        API Key
                       </th>
-                    </tr>
-                    <tr>
-                      <th scope="row">Annotation on Image Upload</th>
                       <td>
-                        <h4>When should analysis of new images be performed?</h4>
+                        <input
+                          name="apiKey"
+                          type="text"
+                          value={options.apiKey}
+                          onChange={handleInputChange}
+                          placeholder={isGetting ? "Loading..." : "Enter key"}
+                        />
+                        {/* {isGetting && <p>Loading...</p>} */}
                         <p>
-                          Specify when to automatically create alt text, and other image analysis
-                          features, on newly uploaded images.
-                        </p>
-                        <p>
-                          <input
-                            name="onUpload"
-                            id="async"
-                            type="radio"
-                            checked={"async" === options.onUpload}
-                            value={"async"}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="async">
-                            Generate alt text in the background. (Recommended)
-                          </label>
-                          <span className="description">
-                            Alt text creation will run in the background during image upload. You
-                            may need to refresh the screen after upload to see alt text.
-                          </span>
-                        </p>
-                        <p>
-                          <input
-                            name="onUpload"
-                            id="blocking"
-                            type="radio"
-                            checked={"blocking" === options.onUpload}
-                            value={"blocking"}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="blocking">Generate alt text during upload.</label>
-                          <span className="description">
-                            Uploads will take longer, but this may solve any compatibility issues
-                            with other plugins.
-                          </span>
-                        </p>
-                        <p>
-                          <input
-                            name="onUpload"
-                            id="none"
-                            type="radio"
-                            checked={"none" === options.onUpload}
-                            value={"none"}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="none">Do not generate alt text on upload.</label>
+                          <a
+                            href="https://cloud.google.com/vision/docs/setup"
+                            target="_blank"
+                            rel="noopener noreferrer">
+                            Get your Google Cloud Vision API key here.
+                          </a>
                         </p>
                       </td>
                     </tr>
-                    <tr>
-                      <th scope="row">Annotation Features</th>
-                      <td>
-                        <h4>Select the image analyzation features you want to perform.</h4>
-                        <p>
-                          <input
-                            name="altText"
-                            id="altText"
-                            type="checkbox"
-                            checked={1 === options.altText}
-                            value={"altText"}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="async">Alt text</label>
-                          <span className="description">
-                            Automatically generate image alt text for every image that is missing
-                            it. Also identifies specific objects in images, and similar images on
-                            the web.
-                          </span>
-                        </p>
-                        <p>
-                          <input
-                            name="labels"
-                            id="labels"
-                            type="checkbox"
-                            checked={1 === options.labels}
-                            value={"labels"}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="labels">Labels</label>
-                          <span className="description">
-                            Identify general objects, locations, activities, animal species,
-                            products, and more
-                          </span>
-                        </p>
-                        <p>
-                          <input
-                            name="text"
-                            id="text"
-                            type="checkbox"
-                            checked={1 === options.text}
-                            value={"text"}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="text">Text recognition</label>
-                          <span className="description">
-                            Use optical character recognition (OCR) to extract text from images and
-                            save to image metadata.
-                          </span>
-                        </p>
-                        <p>
-                          <input
-                            name="logos"
-                            id="logos"
-                            type="checkbox"
-                            checked={1 === options.logos}
-                            value={"logos"}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="logos">Logos</label>
-                          <span className="description">
-                            Identify logos from brands, organizations — anything and add it to image
-                            metadata.
-                          </span>
-                        </p>
-                        <p>
-                          <input
-                            name="landmarks"
-                            id="landmarks"
-                            type="checkbox"
-                            checked={1 === options.landmarks}
-                            value={"landmarks"}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="landmarks">Landmarks</label>
-                          <span className="description">
-                            Identify landmarks and add that information to image metadata.
-                          </span>
-                        </p>
-                      </td>
-                    </tr>
-                  </>
-                )}
-              </tbody>
-            </table>
-            <div>
-              <button type="submit" className="button" disabled={isSaving}>
-                Save Settings
-              </button>
-            </div>
-          </form>
-        </Accordion>
-        <div className="sidebar">
-          <div className="estimate">
-            <h3 className="title">
-              Get Your Enlightened
-              <br />
-              Images API Key
-            </h3>
-            <p>Generate missing alt text for all images for only:</p>
-            <h3>${estimate}</h3>
-            <a
-              href="https://dev-smart-image-ai.pantheonsite.io/checkout/"
-              target="_blank"
-              rel="noreferrer"
-              className="button-primary">
-              Buy Now
-            </a>
-          </div>
+                  )}
+                  {options.hasPro === 1 && (
+                    <>
+                      <tr>
+                        <th colSpan={2}>
+                          <h2>Enlightened Images Pro Settings</h2>
+                        </th>
+                      </tr>
+                      <tr>
+                        <th scope="row">Annotation on Image Upload</th>
+                        <td>
+                          <h4>When should analysis of new images be performed?</h4>
+                          <p>
+                            Specify when to automatically create alt text, and other image analysis
+                            features, on newly uploaded images.
+                          </p>
+                          <p>
+                            <input
+                              name="onUpload"
+                              id="async"
+                              type="radio"
+                              checked={"async" === options.onUpload}
+                              value={"async"}
+                              onChange={handleInputChange}
+                            />
+                            <label htmlFor="async">
+                              Generate alt text in the background. (Recommended)
+                            </label>
+                            <span className="description">
+                              Alt text creation will run in the background during image upload. You
+                              may need to refresh the screen after upload to see alt text.
+                            </span>
+                          </p>
+                          <p>
+                            <input
+                              name="onUpload"
+                              id="blocking"
+                              type="radio"
+                              checked={"blocking" === options.onUpload}
+                              value={"blocking"}
+                              onChange={handleInputChange}
+                            />
+                            <label htmlFor="blocking">Generate alt text during upload.</label>
+                            <span className="description">
+                              Uploads will take longer, but this may solve any compatibility issues
+                              with other plugins.
+                            </span>
+                          </p>
+                          <p>
+                            <input
+                              name="onUpload"
+                              id="none"
+                              type="radio"
+                              checked={"none" === options.onUpload}
+                              value={"none"}
+                              onChange={handleInputChange}
+                            />
+                            <label htmlFor="none">Do not generate alt text on upload.</label>
+                          </p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Annotation Features</th>
+                        <td>
+                          <h4>Select the image analyzation features you want to perform.</h4>
+                          <p>
+                            <input
+                              name="altText"
+                              id="altText"
+                              type="checkbox"
+                              checked={1 === options.altText}
+                              value={"altText"}
+                              onChange={handleInputChange}
+                            />
+                            <label htmlFor="async">Alt text</label>
+                            <span className="description">
+                              Automatically generate image alt text for every image that is missing
+                              it. Also identifies specific objects in images, and similar images on
+                              the web.
+                            </span>
+                          </p>
+                          <p>
+                            <input
+                              name="labels"
+                              id="labels"
+                              type="checkbox"
+                              checked={1 === options.labels}
+                              value={"labels"}
+                              onChange={handleInputChange}
+                            />
+                            <label htmlFor="labels">Labels</label>
+                            <span className="description">
+                              Identify general objects, locations, activities, animal species,
+                              products, and more
+                            </span>
+                          </p>
+                          <p>
+                            <input
+                              name="text"
+                              id="text"
+                              type="checkbox"
+                              checked={1 === options.text}
+                              value={"text"}
+                              onChange={handleInputChange}
+                            />
+                            <label htmlFor="text">Text recognition</label>
+                            <span className="description">
+                              Use optical character recognition (OCR) to extract text from images
+                              and save to image metadata.
+                            </span>
+                          </p>
+                          <p>
+                            <input
+                              name="logos"
+                              id="logos"
+                              type="checkbox"
+                              checked={1 === options.logos}
+                              value={"logos"}
+                              onChange={handleInputChange}
+                            />
+                            <label htmlFor="logos">Logos</label>
+                            <span className="description">
+                              Identify logos from brands, organizations — anything and add it to
+                              image metadata.
+                            </span>
+                          </p>
+                          <p>
+                            <input
+                              name="landmarks"
+                              id="landmarks"
+                              type="checkbox"
+                              checked={1 === options.landmarks}
+                              value={"landmarks"}
+                              onChange={handleInputChange}
+                            />
+                            <label htmlFor="landmarks">Landmarks</label>
+                            <span className="description">
+                              Identify landmarks and add that information to image metadata.
+                            </span>
+                          </p>
+                        </td>
+                      </tr>
+                    </>
+                  )}
+                </tbody>
+              </table>
+              <div>
+                <button type="submit" className="button" disabled={isSaving}>
+                  Save Settings
+                </button>
+              </div>
+            </form>
+          </Accordion>
+          <Dashboard urls={urls} nonce={nonce} options={options} />
         </div>
+        {(options.isPro !== 1 || options.hasPro !== 1) && (
+          <Sidebar
+            estimate={estimate}
+            count={count}
+            isPro={options.isPro}
+            hasPro={options.hasPro}
+          />
+        )}
       </div>
-      <Dashboard urls={urls} nonce={nonce} options={options} />
     </>
   )
 }

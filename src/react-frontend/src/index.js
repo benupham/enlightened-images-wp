@@ -6,6 +6,7 @@ import "./index.css"
 const App = (props) => {
   const [notice, setNotice] = useState([])
   const [estimate, setEstimate] = useState()
+  const [count, setCount] = useState()
   const { urls, nonce } = window.smartimagesearch_ajax
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -24,6 +25,7 @@ const App = (props) => {
         data = json.body
         console.log(data)
         setEstimate(data.estimate)
+        setCount(data.count)
       } catch (error) {
         console.log(error)
         setNotice(error)
@@ -34,10 +36,16 @@ const App = (props) => {
 
   return (
     <>
-      <h1>Smart Image AI Alt Text Generator</h1>
+      <h1>EnlightenedImages Alt Text and AI Annotation</h1>
       <div className="wrap sisa">
         {notice.length > 0 && <Notice notice={notice} />}
-        <Settings nonce={nonce} urls={urls} setNotice={setNotice} estimate={estimate} />
+        <Settings
+          nonce={nonce}
+          urls={urls}
+          setNotice={setNotice}
+          estimate={estimate}
+          count={count}
+        />
       </div>
     </>
   )
