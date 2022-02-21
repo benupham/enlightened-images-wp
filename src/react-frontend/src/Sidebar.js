@@ -4,10 +4,12 @@ import "./sidebar.css"
 export const Sidebar = ({ estimate, count, isPro, hasPro }) => {
   return (
     <div className="sidebar">
-      {isPro === 0 && (
+      {isPro === 0 && count > 0 && (
         <div className="estimate">
           <h3 className="title">Purchase an API Key</h3>
-          <p>Generate missing alt text for all images for only:</p>
+          <p>
+            Generate alt text now for all <b>{count}</b> images missing it for only:
+          </p>
           <span className="price">${estimate}</span>
           <a
             href={`https://dev-smart-image-ai.pantheonsite.io/checkout/?count=${count}`}

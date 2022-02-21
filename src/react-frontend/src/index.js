@@ -36,7 +36,9 @@ const App = (props) => {
 
   return (
     <>
-      <h1>EnlightenedImages Alt Text and AI Annotation</h1>
+      <h1>
+        <span className="enlightened">EnlightenedImages</span> Alt Text and AI Image Annotation
+      </h1>
       <div className="wrap sisa">
         {notice.length > 0 && <Notice notice={notice} />}
         <Settings

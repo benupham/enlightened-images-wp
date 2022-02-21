@@ -78,11 +78,11 @@ button span {
   margin-left: 4px;
   margin-bottom: 3px;
 }
-.sisa-wrapper {
-  margin-top: 40px;
+.bulk {
+  margin-top: 20px;
   min-height: 450px;
 }
-.sisa-bulk-wrap {
+.bulk-table-wrap {
   display: flex;
   flex-wrap: wrap;
   flex-direction: row;
@@ -92,5 +92,5 @@ button span {
 }
 button.button-primary.trigger-bulk,
 button.trigger-bulk {
-  font-size: 1.5em !important;
+  font-size: 1.3em !important;
 }

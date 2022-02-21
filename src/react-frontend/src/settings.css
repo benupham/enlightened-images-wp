@@ -2,6 +2,9 @@
   display: flex;
   justify-content: space-between;
 }
+.dashboard {
+  width: 100%;
+}
 .sisa-options-table {
   border-collapse: collapse;
   text-align: left;

@@ -4,7 +4,7 @@ import "./bulktable.css"
 
 export const BulkTable = ({ images }) => {
   return (
-    <table className="sisa_bulk_table">
+    <table className="bulk-table">
       <thead>
         <tr>
           <th className="thumbnail">Image</th>

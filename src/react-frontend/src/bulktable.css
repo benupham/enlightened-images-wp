@@ -1,50 +1,50 @@
-.sisa_bulk_table {
+.bulk-table {
   width: 100%;
   column-gap: 0;
   border-spacing: 0;
   border: 1px solid #e5e5e5;
   box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
 }
-.sisa_bulk_table thead {
+.bulk-table thead {
   background-color: #fff;
   height: 50px;
 }
-.sisa_bulk_table tr {
+.bulk-table tr {
   background-color: #fff;
   max-height: 100px;
 }
-.sisa_bulk_table tbody tr:nth-child(odd) {
+.bulk-table tbody tr:nth-child(odd) {
   background-color: aliceblue;
 }
-.sisa_bulk_table th {
+.bulk-table th {
   text-align: left;
 }
-.sisa_bulk_table .sisa-meta {
+.bulk-table .sisa-meta {
   width: auto;
 }
-.sisa_bulk_table .alt-text {
+.bulk-table .alt-text {
   width: 15%;
 }
-.sisa_bulk_table .thumbnail {
+.bulk-table .thumbnail {
   width: 75px;
 }
-.sisa_bulk_table .status {
+.bulk-table .status {
   width: 25px;
   text-align: center;
 }
-.sisa_bulk_table td.status {
+.bulk-table td.status {
   color: green;
 }
-.sisa_bulk_table td.status.Error {
+.bulk-table td.status.Error {
   color: red;
 }
-.sisa_bulk_table td.filename {
+.bulk-table td.filename {
   width: 15%;
   color: #8c8f94;
   text-overflow: ellipsis;
   overflow: hidden;
 }
-.sisa_bulk_table th,
-.sisa_bulk_table td {
+.bulk-table th,
+.bulk-table td {
   padding: 10px;
 }

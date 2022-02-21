@@ -7,15 +7,16 @@
   position: relative;
   width: 100%;
   height: auto;
-  background-color: white;
+  background-color: lightgray;
   border-radius: 20px;
 }
 .progress-size {
   position: absolute;
   min-width: 45px;
   height: 100%;
-  background: repeating-linear-gradient(
-    -65deg,
+  background-color: white;
+  background-image: repeating-linear-gradient(
+    -63deg,
     #2271b1,
     #2271b1 15px,
     #2271b186 15px,
@@ -23,11 +24,13 @@
   );
   border-radius: 20px;
   border: 1px solid #2271b1;
+  box-sizing: border-box;
 }
 .progress-stats {
+  color: white;
   text-align: center;
   position: relative;
   font-weight: bold;
-  text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.712);
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.512);
   line-height: 30px;
 }

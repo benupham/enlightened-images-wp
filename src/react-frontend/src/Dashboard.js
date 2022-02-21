@@ -115,13 +115,13 @@ export const Dashboard = ({ urls, nonce, options }) => {
   }
 
   return (
-    <div className="sisa-wrapper">
+    <div className={options.isPro === 0 || options.hasPro === 0 ? `bulk wrap` : `bulk`}>
       <h3>Images missing alt text: {stats.remaining}</h3>
-      {estimate && <h3>Time remaining: {estimate}</h3>}
+      <h3>Time remaining: {estimate}</h3>
 
       {!bulkRunning && !paused && stats.remaining > 0 && (
         <button className="button button-primary trigger-bulk" onClick={handleBulkAnnotate}>
-          Start Bulk
+          Start Bulk Annotation
         </button>
       )}
       {(paused || bulkRunning) && (
@@ -132,7 +132,7 @@ export const Dashboard = ({ urls, nonce, options }) => {
       {stats.remaining === 0 && <h3>Complete!</h3>}
 
       <ProgressBar stats={stats} />
-      <div className={bulkRunning === true ? "bulk-running sisa-bulk-wrap" : "sisa-bulk-wrap"}>
+      <div className={bulkRunning === true ? "bulk-running bulk-table-wrap" : "bulk-table-wrap"}>
         {errorMessage && (
           <div className="error settings-error">
             <p>{errorMessage}</p>
