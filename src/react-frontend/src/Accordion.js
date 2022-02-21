@@ -17,10 +17,6 @@ export const Accordion = ({ title, setOpen, open, children }) => {
   const [height, setHeight] = useState(0)
   const [direction, setDirection] = useState("right")
 
-  const toggleAccordion = () => {
-    setOpen((prev) => !prev)
-  }
-
   useEffect(() => {
     if (open) {
       setHeight(content.current.scrollHeight)
@@ -34,7 +30,7 @@ export const Accordion = ({ title, setOpen, open, children }) => {
   return (
     <div className="accordion">
       <h3>
-        <AccordionTitle onClick={toggleAccordion}>
+        <AccordionTitle onClick={(e) => setOpen((prev) => !prev)}>
           {title}
           <i className={`arrow-accordion ${direction}`}></i>
         </AccordionTitle>
