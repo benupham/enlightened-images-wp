@@ -117,7 +117,9 @@ export const Dashboard = ({ urls, nonce, options }) => {
   return (
     <div className={options.isPro === 0 || options.hasPro === 0 ? `bulk wrap` : `bulk`}>
       <h3>Images missing alt text: {stats.remaining}</h3>
-      <h3>Time remaining: {estimate}</h3>
+      {options.hasPro && options.labels && (
+        <h3>Images missing annotation: {stats.remainingAnnotation}</h3>
+      )}
 
       {!bulkRunning && !paused && stats.remaining > 0 && (
         <button className="button button-primary trigger-bulk" onClick={handleBulkAnnotate}>
@@ -130,6 +132,7 @@ export const Dashboard = ({ urls, nonce, options }) => {
         </button>
       )}
       {stats.remaining === 0 && <h3>Complete!</h3>}
+      <h3>Estimated Time remaining: {estimate}</h3>
 
       <ProgressBar stats={stats} />
       <div className={bulkRunning === true ? "bulk-running bulk-table-wrap" : "bulk-table-wrap"}>

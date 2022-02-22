@@ -156,6 +156,17 @@ class SisaPro extends SmartImageSearch_WP_Base
         return $response;
     }
 
+    public function get_annotation_options()
+    {
+        return array(
+            // '_wp_attachment_image_alt' => (int) get_option('sisa_alt_text', (int) 1),
+            'sisa_labels' => (int) get_option('sisa_labels', (int) 0),
+            'sisa_text' => (int) get_option('sisa_text', (int) 0),
+            'sisa_logos' => (int) get_option('sisa_logos', (int) 0),
+            'sisa_landmarks' => (int) get_option('sisa_landmarks', (int) 0),
+        );
+    }
+
     public function pro_api_bulk_sisa($request)
     {
 
@@ -168,40 +179,64 @@ class SisaPro extends SmartImageSearch_WP_Base
             $now = (int) $start;
         }
 
-        $annotation_options = array(
-            '_wp_attachment_image_alt' => (int) get_option('sisa_alt_text', (int) 1),
-            'sisa_labels' => (int) get_option('sisa_labels', (int) 0),
-            'sisa_text' => (int) get_option('sisa_text', (int) 0),
-            'sisa_logos' => (int) get_option('sisa_logos', (int) 0),
-            'sisa_landmarks' => (int) get_option('sisa_landmarks', (int) 0),
-        );
+        $annotation_options = $this->get_annotation_options();
 
         $meta_query = '';
 
         foreach ($annotation_options as $key => $value) {
             if ($value === 1) {
-                $meta_query .= "'" . $key . "',";
+                $meta_query .= "meta_value NOT LIKE '%" . $key . "%' OR ";
             }
         }
-        $meta_query = substr($meta_query, 0, -1);
+        $meta_query = substr($meta_query, 0, -3);
+
+        // error_log($meta_query);
 
         global $wpdb;
-        $images = $wpdb->get_results(
-            "
-            SELECT post_id 
-            FROM $wpdb->postmeta
-            WHERE meta_key IN ($meta_query)
-            AND meta_value IS NULL OR meta_value = '';
-            "
-        );
+        $datetime = "'" . date('Y-m-d H:i:s', $now) . "'";
+        $sisa_query = "
+        SELECT DISTINCT post_id 
+        FROM $wpdb->postmeta
+        INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` AND wp_posts.`post_type`= 'attachment' AND wp_posts.`post_date` < $datetime 
+        WHERE meta_key = 'sisa_meta'
+        AND meta_value IS NULL OR 
+        post_id IN 
+        (
+            SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'sisa_meta' AND 
+            (
+                $meta_query
+            )
+        ) 
+        OR post_id NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'sisa_meta') 
+        ";
 
+        $annotation = $wpdb->get_results($sisa_query);
+        $annotation_cnt = count($annotation);
+
+        $alt_text = $wpdb->get_results("
+        SELECT DISTINCT post_id 
+        FROM $wpdb->postmeta
+        INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` AND wp_posts.`post_type`= 'attachment' AND wp_posts.`post_date` < $datetime 
+        WHERE (meta_key = '_wp_attachment_image_alt' AND meta_value IS NULL OR meta_value = '')
+        ");
+
+        $alt_text_cnt = count($alt_text);
+
+        $images = array_unique(array_merge($alt_text, $annotation), SORT_REGULAR);
         $images_cnt = count($images);
+
+        // error_log(print_r($images, true));
+        error_log($images_cnt);
+        error_log(count($alt_text));
+        error_log($sisa_query);
 
         if (false === $start) {
             return new WP_REST_RESPONSE(array(
                 'success' => true,
                 'body' => array(
                     'count' => $images_cnt,
+                    'count_annotation' => $annotation_cnt,
+                    'count_alt_text' => $alt_text_cnt,
                     'errors' => 0,
                     'start' => $now,
                     'estimate' => $this->get_estimate($images_cnt)
@@ -237,13 +272,7 @@ class SisaPro extends SmartImageSearch_WP_Base
             $attachment = get_post($p);
             $annotation_data['file'] = $attachment->post_name;
 
-            $image = null;
-
-            if (has_image_size('medium')) {
-                $image = wp_get_attachment_image_url($p, 'medium');
-            } else {
-                $image = wp_get_original_image_url($p);
-            }
+            $image = $this->get_image_url($p);
 
             if ($image === false) {
                 $response[] = new WP_Error('bad_image', 'Image filepath not found');
@@ -372,35 +401,15 @@ class SisaPro extends SmartImageSearch_WP_Base
             if (is_string($value) && !empty($value)) {
                 $sisa_search[] = $value;
             }
-            update_post_meta($p, $key, $value);
         }
 
         $sisa_search = array_unique($sisa_search);
         $sisa_search_string = implode(' ', $sisa_search);
         update_post_meta($p, 'sisa_search', $sisa_search_string);
 
+        update_post_meta($p, 'sisa_meta', $cleaned_data);
+
         return $sisa_search_string;
-    }
-
-    public function get_filepath($p)
-    {
-        $wp_metadata = wp_get_attachment_metadata($p);
-        if (!is_array($wp_metadata) || !isset($wp_metadata['file'])) {
-            return false;
-        }
-        $upload_dir = wp_upload_dir();
-        $path_prefix = $upload_dir['basedir'] . '/';
-        $path_info = pathinfo($wp_metadata['file']);
-        if (isset($path_info['dirname'])) {
-            $path_prefix .= $path_info['dirname'] . '/';
-        }
-
-        /* Do not use pathinfo for getting the filename.
-        It doesn't work when the filename starts with a special character. */
-        $path_parts = explode('/', $wp_metadata['file']);
-        $name = end($path_parts);
-        $filename = $path_prefix . $name;
-        return $filename;
     }
 
     public function clean_up_gcv_data($data)
@@ -567,10 +576,11 @@ class SisaPro extends SmartImageSearch_WP_Base
         if (current_user_can('upload_files')) {
 
             $attachment_id = intval($_POST['attachment_id']);
-            $image_file_path = $this->get_filepath($attachment_id);
+            $image_url = $this->get_image_url($attachment_id);
 
-            $gcv_client = $this->gcv_client;
-            $gcv_result = $gcv_client->get_annotation($image_file_path);
+            $options = $this->get_annotation_options();
+            $features = $this->get_annotation_features($options);
+            $gcv_result = $this->gcv_client->get_annotation($image_url, implode(',', $features));
 
             if (!is_wp_error($gcv_result)) {
 
@@ -579,6 +589,7 @@ class SisaPro extends SmartImageSearch_WP_Base
                 $this->update_attachment_meta($cleaned_data, $attachment_id);
             }
         }
+
         exit();
     }
 
@@ -587,10 +598,10 @@ class SisaPro extends SmartImageSearch_WP_Base
 
         if (current_user_can('upload_files') && is_array($metadata)) {
 
-            $image_file_path = $this->get_filepath($attachment_id);
-
-            $gcv_client = new SmartImageSearch_GCV_Client();
-            $gcv_result = $gcv_client->get_annotation($image_file_path);
+            $image_url = $this->get_image_url($attachment_id);
+            $options = $this->get_annotation_options();
+            $features = $this->get_annotation_features($options);
+            $gcv_result = $this->gcv_client->get_annotation($image_url, implode(',', $features));
 
             if (!is_wp_error($gcv_result)) {
 
@@ -600,6 +611,19 @@ class SisaPro extends SmartImageSearch_WP_Base
         }
 
         return $metadata;
+    }
+
+    public function get_image_url($attachment_id)
+    {
+        $url = null;
+
+        if (has_image_size('medium')) {
+            $url = wp_get_attachment_image_url($attachment_id, 'medium');
+        } else {
+            $url = wp_get_original_image_url($attachment_id);
+        }
+
+        return $url;
     }
 
     public function admin_menu()
