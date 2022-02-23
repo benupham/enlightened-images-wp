@@ -159,7 +159,7 @@ class SisaPro extends SmartImageSearch_WP_Base
     public function get_annotation_options()
     {
         return array(
-            // '_wp_attachment_image_alt' => (int) get_option('sisa_alt_text', (int) 1),
+            // 'sisa_alt_text' => (int) get_option('sisa_alt_text', (int) 1),
             'sisa_labels' => (int) get_option('sisa_labels', (int) 0),
             'sisa_text' => (int) get_option('sisa_text', (int) 0),
             'sisa_logos' => (int) get_option('sisa_logos', (int) 0),
@@ -197,7 +197,9 @@ class SisaPro extends SmartImageSearch_WP_Base
         $sisa_query = "
         SELECT DISTINCT post_id 
         FROM $wpdb->postmeta
-        INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` AND wp_posts.`post_type`= 'attachment' AND wp_posts.`post_date` < $datetime 
+        INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` 
+        AND wp_posts.`post_type`= 'attachment' 
+        AND wp_posts.`post_date` < $datetime 
         WHERE meta_key = 'sisa_meta'
         AND meta_value IS NULL OR 
         post_id IN 
@@ -213,19 +215,25 @@ class SisaPro extends SmartImageSearch_WP_Base
         $annotation = $wpdb->get_results($sisa_query);
         $annotation_cnt = count($annotation);
 
-        $alt_text = $wpdb->get_results("
-        SELECT DISTINCT post_id 
-        FROM $wpdb->postmeta
-        INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` AND wp_posts.`post_type`= 'attachment' AND wp_posts.`post_date` < $datetime 
-        WHERE (meta_key = '_wp_attachment_image_alt' AND meta_value IS NULL OR meta_value = '')
-        ");
+        $alt_text = array();
+
+        if (1 === (int) get_option('sisa_alt_text', (int) 1)) {
+
+            $alt_text = $wpdb->get_results("
+            SELECT DISTINCT post_id 
+            FROM $wpdb->postmeta
+            INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` 
+            AND wp_posts.`post_type`= 'attachment' 
+            AND wp_posts.`post_date` < $datetime 
+            WHERE (meta_key = '_wp_attachment_image_alt' AND meta_value IS NULL OR meta_value = '')
+            ");
+        }
 
         $alt_text_cnt = count($alt_text);
 
         $images = array_unique(array_merge($alt_text, $annotation), SORT_REGULAR);
         $images_cnt = count($images);
 
-        // error_log(print_r($images, true));
         error_log($images_cnt);
         error_log(count($alt_text));
         error_log($sisa_query);
@@ -325,7 +333,6 @@ class SisaPro extends SmartImageSearch_WP_Base
     {
         $features = array();
         $feature_lookup = array(
-            '_wp_attachment_image_alt' => 'OBJECT_LOCALIZATION,WEB_DETECTION',
             'sisa_alt_text' => 'OBJECT_LOCALIZATION,WEB_DETECTION',
             'sisa_labels' => 'LABEL_DETECTION',
             'sisa_text' => 'TEXT_DETECTION',
@@ -339,6 +346,147 @@ class SisaPro extends SmartImageSearch_WP_Base
             }
         }
         return $features;
+    }
+
+    public function update_attachment_meta($cleaned_data, $p)
+    {
+        $sisa_search = array();
+
+        foreach ($cleaned_data as $key => $value) {
+            if (is_array($value) && !empty($value)) {
+                $sisa_search = array_merge($sisa_search, $value);
+            }
+            if (is_string($value) && !empty($value)) {
+                $sisa_search[] = $value;
+            }
+        }
+        $current_search = explode(' ', get_post_meta($p, 'sisa_search', true));
+        $sisa_search = array_unique(array_merge($sisa_search, $current_search));
+        $new_sisa_search = implode(' ', $sisa_search);
+        update_post_meta($p, 'sisa_search', $new_sisa_search);
+
+        $current_meta = get_post_meta($p, 'sisa_meta', true);
+        update_post_meta($p, 'sisa_meta', array_merge($current_meta, $cleaned_data));
+
+        return $new_sisa_search;
+    }
+
+    public function clean_up_gcv_data($data)
+    {
+        $cleaned_data = array();
+        $annotation_options = $this->get_annotation_options();
+        $min_score = 0.6;
+
+        if (1 === $annotation_options['sisa_landmarks']) {
+            if (isset($data->landmarkAnnotations) && !empty($data->landmarkAnnotations)) {
+                if ($data->landmarkAnnotations[0]->score >= $min_score) {
+                    $cleaned_data['sisa_landmarks'] = $data->landmarkAnnotations[0]->description;
+                } else {
+                    $cleaned_data['sisa_landmarks'] = '';
+                }
+            }
+        }
+
+        if (1 === $annotation_options['sisa_labels']) {
+            if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
+                $labels = array();
+                foreach ($data->labelAnnotations as $label) {
+                    if ($label->score >= $min_score) {
+                        $labels[] = strtolower($label->description);
+                    }
+                }
+                $cleaned_data['sisa_labels'] = array_values(array_unique($labels));
+            } else {
+                $cleaned_data['sisa_labels'] = '';
+            }
+        }
+
+        if (1 === (int) get_option('sisa_alt_text')) {
+            if (isset($data->webDetection) && !empty($data->webDetection)) {
+                $web_entities = array();
+                foreach ($data->webDetection->webEntities as $entity) {
+                    if (isset($entity->description) && $entity->score >= $min_score)
+                        $web_entities[] = strtolower($entity->description);
+                }
+                $cleaned_data['sisa_web_entities'] = array_values(array_unique($web_entities));
+
+                if (isset($data->webDetection->bestGuessLabels) && !empty($data->webDetection->bestGuessLabels)) {
+                    $web_labels = array();
+                    foreach ($data->webDetection->bestGuessLabels as $web_label) {
+                        if (isset($web_label->label)) {
+                            $web_labels[] = $web_label->label;
+                        }
+                    }
+                    $cleaned_data['sisa_web_labels'] = array_values(array_unique($web_labels));
+                }
+            } else {
+                $cleaned_data['sisa_web_entities'] = '';
+                $cleaned_data['sisa_web_labels'] = '';
+            }
+
+            if (isset($data->localizedObjectAnnotations) && !empty($data->localizedObjectAnnotations)) {
+                $objects = array();
+                foreach ($data->localizedObjectAnnotations as $object) {
+                    if ($object->score >= $min_score) {
+                        $objects[] = strtolower($object->name);
+                    }
+                }
+                $cleaned_data['sisa_objects'] =  array_values(array_unique($objects));
+            } else {
+                $cleaned_data['sisa_objects'] =  '';
+            }
+        }
+
+        if (1 === $annotation_options['sisa_logos']) {
+            if (isset($data->logoAnnotations) && !empty($data->logoAnnotations)) {
+                $logos = array();
+                foreach ($data->logoAnnotations as $logo) {
+                    if ($logo->score >= $min_score) {
+                        $logos[] = $logo->description;
+                    }
+                }
+                $cleaned_data['sisa_logos'] = array_values(array_unique($logos));
+            } else {
+                $cleaned_data['sisa_logos'] = '';
+            }
+        }
+
+        if (1 === $annotation_options['sisa_text']) {
+            if (isset($data->textAnnotations) && !empty($data->textAnnotations)) {
+                $text = $data->textAnnotations[0]->description;
+                $cleaned_data['sisa_text'] = $text;
+            } else {
+                $cleaned_data['sisa_text'] = '';
+            }
+        }
+
+        return $cleaned_data;
+    }
+
+    public function update_image_alt_text($cleaned_data, $p, $save_alt)
+    {
+        $success = true;
+        $alt = '';
+
+        if (is_array($cleaned_data['sisa_web_labels']) && !empty($cleaned_data['sisa_web_labels'][0])) {
+            $alt = $cleaned_data['sisa_web_labels'][0];
+        } elseif (is_array($cleaned_data['sisa_web_entities']) && !empty($cleaned_data['sisa_web_entities'][0])) {
+            $alt = $cleaned_data['sisa_web_entities'][0];
+        } else {
+            $alt = $cleaned_data['sisa_objects'][0];
+        }
+
+        if (!empty($existing = get_post_meta($p, '_wp_attachment_image_alt', true))) {
+            return array('existing' => $existing, 'smartimage' => $alt);
+        }
+
+        $success = update_post_meta($p, '_wp_attachment_image_alt', $alt);
+
+        if (false === $success) {
+            return new WP_Error(500, 'Failed to update alt text.', $alt);
+        }
+
+        return array('existing' => '', 'smartimage' => $alt);
     }
 
     public function filter_media_search($query)
@@ -388,115 +536,6 @@ class SisaPro extends SmartImageSearch_WP_Base
             )
         );
         $query->set('meta_query', $meta_query);
-    }
-
-    public function update_attachment_meta($cleaned_data, $p)
-    {
-        $sisa_search = array();
-
-        foreach ($cleaned_data as $key => $value) {
-            if (is_array($value) && !empty($value)) {
-                $sisa_search = array_merge($sisa_search, $value);
-            }
-            if (is_string($value) && !empty($value)) {
-                $sisa_search[] = $value;
-            }
-        }
-
-        $sisa_search = array_unique($sisa_search);
-        $sisa_search_string = implode(' ', $sisa_search);
-        update_post_meta($p, 'sisa_search', $sisa_search_string);
-
-        update_post_meta($p, 'sisa_meta', $cleaned_data);
-
-        return $sisa_search_string;
-    }
-
-    public function clean_up_gcv_data($data)
-    {
-        $cleaned_data = array();
-        $min_score = 0.6;
-
-        if (isset($data->landmarkAnnotations) && !empty($data->landmarkAnnotations)) {
-            if ($data->landmarkAnnotations[0]->score >= $min_score) {
-                $cleaned_data['sisa_landmarks'] = $data->landmarkAnnotations[0]->description;
-            }
-        }
-        if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
-            $labels = array();
-            foreach ($data->labelAnnotations as $label) {
-                if ($label->score >= $min_score) {
-                    $labels[] = strtolower($label->description);
-                }
-            }
-            $cleaned_data['sisa_labels'] = array_values(array_unique($labels));
-        }
-        if (isset($data->webDetection) && !empty($data->webDetection)) {
-            $web_entities = array();
-            foreach ($data->webDetection->webEntities as $entity) {
-                if (isset($entity->description) && $entity->score >= $min_score)
-                    $web_entities[] = strtolower($entity->description);
-            }
-            $cleaned_data['sisa_web_entities'] = array_values(array_unique($web_entities));
-            if (isset($data->webDetection->bestGuessLabels) && !empty($data->webDetection->bestGuessLabels)) {
-                $web_labels = array();
-                foreach ($data->webDetection->bestGuessLabels as $web_label) {
-                    if (isset($web_label->label)) {
-                        $web_labels[] = $web_label->label;
-                    }
-                }
-                $cleaned_data['sisa_web_labels'] = array_values(array_unique($web_labels));
-            }
-        }
-        if (isset($data->localizedObjectAnnotations) && !empty($data->localizedObjectAnnotations)) {
-            $objects = array();
-            foreach ($data->localizedObjectAnnotations as $object) {
-                if ($object->score >= $min_score) {
-                    $objects[] = strtolower($object->name);
-                }
-            }
-            $cleaned_data['sisa_objects'] =  array_values(array_unique($objects));
-        }
-        if (isset($data->logoAnnotations) && !empty($data->logoAnnotations)) {
-            $logos = array();
-            foreach ($data->logoAnnotations as $logo) {
-                if ($logo->score >= $min_score) {
-                    $logos[] = $logo->description;
-                }
-            }
-            $cleaned_data['sisa_logos'] = array_values(array_unique($logos));
-        }
-        if (isset($data->textAnnotations) && !empty($data->textAnnotations)) {
-            $text = $data->textAnnotations[0]->description;
-            $cleaned_data['sisa_text'] = $text;
-        }
-        return $cleaned_data;
-    }
-
-    public function update_image_alt_text($cleaned_data, $p, $save_alt)
-    {
-        $success = true;
-        $alt = '';
-
-        if (is_array($cleaned_data['sisa_web_labels']) && !empty($cleaned_data['sisa_web_labels'][0])) {
-            $alt = $cleaned_data['sisa_web_labels'][0];
-        } elseif (is_array($cleaned_data['sisa_web_entities']) && !empty($cleaned_data['sisa_web_entities'][0])) {
-            $alt = $cleaned_data['sisa_web_entities'][0];
-        } else {
-            $alt = $cleaned_data['sisa_objects'][0];
-        }
-
-        if (!empty($existing = get_post_meta($p, '_wp_attachment_image_alt', true))) {
-            return array('existing' => $existing, 'smartimage' => $alt);
-        }
-
-        $success = update_post_meta($p, '_wp_attachment_image_alt', $alt);
-
-        if (false === $success) {
-            return new WP_Error(500, 'Failed to update alt text.', $alt);
-        }
-
-        return array('existing' => '', 'smartimage' => $alt);
     }
 
     public function enqueue_scripts($hook)
