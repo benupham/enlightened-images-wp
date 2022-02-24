@@ -234,9 +234,9 @@ class SisaPro extends SmartImageSearch_WP_Base
         $images = array_unique(array_merge($alt_text, $annotation), SORT_REGULAR);
         $images_cnt = count($images);
 
-        error_log($images_cnt);
-        error_log(count($alt_text));
-        error_log($sisa_query);
+        // error_log($images_cnt);
+        // error_log(count($alt_text));
+        // error_log($sisa_query);
 
         if (false === $start) {
             return new WP_REST_RESPONSE(array(
