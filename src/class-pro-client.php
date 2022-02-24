@@ -22,8 +22,8 @@ class SmartImageSearch_SisaPro_Client
     }
 
     $data = json_decode(wp_remote_retrieve_body($request));
-    error_log('returned from pro server');
-    error_log(print_r($data, true));
+    // error_log('returned from pro server');
+    // error_log(print_r($data, true));
 
     if (isset($data->code)) {
       $response_code = $data->code;

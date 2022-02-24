@@ -2,8 +2,10 @@ const fs = require("fs")
 const archiver = require("archiver")
 const path = require("path")
 
-const prefix = "smartcrop-image-ai" // folder name
-const output = fs.createWriteStream(path.resolve(__dirname, "../../../../smartcrop-image-ai.zip"))
+const prefix = "smart-image-search-ai" // folder name
+const output = fs.createWriteStream(
+  path.resolve(__dirname, "../../../../smart-image-search-ai.zip")
+)
 const archive = archiver("zip", { zlib: { level: 9 } }) // Sets the compression level.
 
 // listen for all archive data to be written
@@ -42,8 +44,8 @@ archive.glob("../../src/react-frontend/build/static/js/main.*.js", null)
 archive.glob("../../src/react-frontend/build/static/js/main.*.js.map", null)
 archive.glob("../../src/react-frontend/build/static/css/main.*.css", null)
 archive.glob("../../src/*.php")
-archive.file(path.resolve(__dirname, "../../../smart-crop-image-ai.php"), {
-  name: "smart-crop-image-ai.php"
+archive.file(path.resolve(__dirname, "../../../smart-image-search-ai.php"), {
+  name: "smart-image-search-ai.php"
 })
 archive.file(path.resolve(__dirname, "../../../uninstall.php"), {
   name: "uninstall.php"
@@ -51,7 +53,6 @@ archive.file(path.resolve(__dirname, "../../../uninstall.php"), {
 archive.file(path.resolve(__dirname, "../build/asset-manifest.json"), {
   name: "../src/react-frontend/build/asset-manifest.json"
 })
-archive.append(null, { name: "preview-images/" })
 archive.file(path.resolve(__dirname, "../../../README.txt"), { name: "README.txt" })
 archive.file(path.resolve(__dirname, "../../../LICENSE.txt"), { name: "LICENSE.txt" })
 
