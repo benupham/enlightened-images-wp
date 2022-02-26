@@ -211,7 +211,7 @@ class SisaPro extends SmartImageSearch_WP_Base
         OR post_id NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'sisa_meta') 
         ";
 
-        error_log($sisa_query);
+        // error_log($sisa_query);
 
         $annotation = $wpdb->get_results($sisa_query);
         $annotation_cnt = count($annotation);
@@ -274,46 +274,11 @@ class SisaPro extends SmartImageSearch_WP_Base
 
             $p = $images[$i]->post_id;
 
-            $annotation_data = array();
-            $gcv_result = array();
+            $annotation_data = $this->annotation_an_image($p);
 
-            $annotation_data['thumbnail'] = wp_get_attachment_image_url($p);
-            $annotation_data['attachmentURL'] = '/wp-admin/upload.php?item=' . $p;
-
-            $attachment = get_post($p);
-            $annotation_data['file'] = $attachment->post_name;
-
-            $image = $this->get_image_url($p);
-
-            if ($image === false) {
-                $image_data[] = new WP_Error('bad_image', 'Image filepath not found');
-                continue;
+            if (is_wp_error($annotation_data) || isset($annotation_data['error'])) {
+                $errors++;
             }
-
-            $features = $this->get_annotation_features($annotation_options);
-            $gcv_result = $this->gcv_client->get_annotation($image, implode(',', $features));
-
-            // error_log("result from server endpoint");
-            // error_log(print_r($gcv_result, true));
-
-            if (is_wp_error($gcv_result)) {
-                error_log('response was a wp error');
-                ++$errors;
-                $annotation_data['error'] = $gcv_result;
-                $image_data[] = $annotation_data;
-                continue;
-            }
-
-            $cleaned_data = $this->clean_up_gcv_data($gcv_result);
-            $alt = $this->update_image_alt_text($cleaned_data, $p, true);
-            $meta = $this->update_attachment_meta($cleaned_data, $p);
-
-            if (is_wp_error($alt) || is_wp_error($meta)) {
-                ++$errors;
-            }
-
-            $annotation_data['alt_text'] = $alt;
-            $annotation_data['meta_data'] = $meta;
 
             $image_data[] = $annotation_data;
         }
@@ -330,6 +295,47 @@ class SisaPro extends SmartImageSearch_WP_Base
         nocache_headers();
 
         return $response;
+    }
+
+    public function annotation_an_image($p)
+    {
+        $annotation_data = array();
+        $gcv_result = array();
+
+        $annotation_data['thumbnail'] = wp_get_attachment_image_url($p);
+        $annotation_data['attachmentURL'] = '/wp-admin/upload.php?item=' . $p;
+
+        $attachment = get_post($p);
+        $annotation_data['file'] = $attachment->post_name;
+
+        $image = $this->get_image_url($p);
+
+
+
+        if ($image === false) {
+            $annotation_data['error'] = new WP_Error('bad_image', 'Image filepath not found');
+            return $annotation_data;
+        }
+
+        $annotation_options = $this->get_annotation_options();
+        $features = $this->get_annotation_features($annotation_options);
+        $gcv_result = $this->gcv_client->get_annotation($image, implode(',', $features));
+
+        if (is_wp_error($gcv_result)) {
+            error_log(print_r($gcv_result, true));
+            $annotation_data['error'] = $gcv_result;
+            return $annotation_data;
+        }
+
+        $cleaned_data = $this->clean_up_gcv_data($gcv_result);
+
+        $alt = $this->update_image_alt_text($cleaned_data, $p, true);
+        $meta = $this->update_attachment_meta($cleaned_data, $p);
+
+        $annotation_data['alt_text'] = $alt;
+        $annotation_data['meta_data'] = $meta;
+
+        return $annotation_data;
     }
 
     public function get_annotation_features($annotation_options)
@@ -383,7 +389,7 @@ class SisaPro extends SmartImageSearch_WP_Base
      * that were requested but for which no data was returned.
      *
      * @param [type] $data
-     * @return void
+     * @return array
      */
     public function clean_up_gcv_data($data)
     {
@@ -392,16 +398,18 @@ class SisaPro extends SmartImageSearch_WP_Base
         $min_score = 0.6;
 
         if (1 === $annotation_options['sisa_landmarks']) {
+            $cleaned_data['sisa_landmarks'] = '';
+
             if (isset($data->landmarkAnnotations) && !empty($data->landmarkAnnotations)) {
                 if ($data->landmarkAnnotations[0]->score >= $min_score) {
                     $cleaned_data['sisa_landmarks'] = $data->landmarkAnnotations[0]->description;
                 }
-            } else {
-                $cleaned_data['sisa_landmarks'] = '';
             }
         }
 
         if (1 === $annotation_options['sisa_labels']) {
+            $cleaned_data['sisa_labels'] = '';
+
             if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
                 $labels = array();
                 foreach ($data->labelAnnotations as $label) {
@@ -410,12 +418,14 @@ class SisaPro extends SmartImageSearch_WP_Base
                     }
                 }
                 $cleaned_data['sisa_labels'] = array_values(array_unique($labels));
-            } else {
-                $cleaned_data['sisa_labels'] = '';
             }
         }
 
         if (1 === (int) get_option('sisa_alt_text')) {
+            $cleaned_data['sisa_web_entities'] = '';
+            $cleaned_data['sisa_web_labels'] = '';
+            $cleaned_data['sisa_objects'] =  '';
+
             if (isset($data->webDetection) && !empty($data->webDetection)) {
                 $web_entities = array();
                 foreach ($data->webDetection->webEntities as $entity) {
@@ -433,9 +443,6 @@ class SisaPro extends SmartImageSearch_WP_Base
                     }
                     $cleaned_data['sisa_web_labels'] = array_values(array_unique($web_labels));
                 }
-            } else {
-                $cleaned_data['sisa_web_entities'] = '';
-                $cleaned_data['sisa_web_labels'] = '';
             }
 
             if (isset($data->localizedObjectAnnotations) && !empty($data->localizedObjectAnnotations)) {
@@ -446,12 +453,12 @@ class SisaPro extends SmartImageSearch_WP_Base
                     }
                 }
                 $cleaned_data['sisa_objects'] =  array_values(array_unique($objects));
-            } else {
-                $cleaned_data['sisa_objects'] =  '';
             }
         }
 
         if (1 === $annotation_options['sisa_logos']) {
+            $cleaned_data['sisa_logos'] = '';
+
             if (isset($data->logoAnnotations) && !empty($data->logoAnnotations)) {
                 $logos = array();
                 foreach ($data->logoAnnotations as $logo) {
@@ -460,17 +467,15 @@ class SisaPro extends SmartImageSearch_WP_Base
                     }
                 }
                 $cleaned_data['sisa_logos'] = array_values(array_unique($logos));
-            } else {
-                $cleaned_data['sisa_logos'] = '';
             }
         }
 
         if (1 === $annotation_options['sisa_text']) {
+            $cleaned_data['sisa_text'] = '';
+
             if (isset($data->textAnnotations) && !empty($data->textAnnotations)) {
                 $text = $data->textAnnotations[0]->description;
                 $cleaned_data['sisa_text'] = $text;
-            } else {
-                $cleaned_data['sisa_text'] = '';
             }
         }
 
@@ -499,6 +504,7 @@ class SisaPro extends SmartImageSearch_WP_Base
         if (false === $success) {
             return new WP_Error(500, 'Failed to update alt text.', $alt);
         }
+        // error_log('image ' . $p . ' alt text: ' . $alt);
 
         return array('existing' => '', 'smartimage' => $alt);
     }
@@ -624,23 +630,14 @@ class SisaPro extends SmartImageSearch_WP_Base
 
     public function ajax_annotate_on_upload()
     {
+        error_log('annotating in the background');
         if (!is_array($_POST['metadata'])) exit();
 
         if (current_user_can('upload_files')) {
 
             $attachment_id = intval($_POST['attachment_id']);
-            $image_url = $this->get_image_url($attachment_id);
-
-            $options = $this->get_annotation_options();
-            $features = $this->get_annotation_features($options);
-            $gcv_result = $this->gcv_client->get_annotation($image_url, implode(',', $features));
-
-            if (!is_wp_error($gcv_result)) {
-
-                $cleaned_data = $this->clean_up_gcv_data($gcv_result);
-                $this->update_image_alt_text($cleaned_data, $attachment_id, true);
-                $this->update_attachment_meta($cleaned_data, $attachment_id);
-            }
+            $result = $this->annotation_an_image($attachment_id);
+            error_log(print_r($result, true));
         }
 
         exit();
@@ -651,16 +648,7 @@ class SisaPro extends SmartImageSearch_WP_Base
 
         if (current_user_can('upload_files') && is_array($metadata)) {
 
-            $image_url = $this->get_image_url($attachment_id);
-            $options = $this->get_annotation_options();
-            $features = $this->get_annotation_features($options);
-            $gcv_result = $this->gcv_client->get_annotation($image_url, implode(',', $features));
-
-            if (!is_wp_error($gcv_result)) {
-
-                $cleaned_data = $this->clean_up_gcv_data($gcv_result);
-                $this->update_image_alt_text($cleaned_data, $attachment_id, true);
-            }
+            $this->annotation_an_image($attachment_id);
         }
 
         return $metadata;
@@ -670,13 +658,11 @@ class SisaPro extends SmartImageSearch_WP_Base
     {
         $url = null;
 
-        // if (has_image_size('medium')) {
-        //     $url = wp_get_attachment_image_url($attachment_id, 'medium');
-        // } else {
-        //     $url = wp_get_original_image_url($attachment_id);
-        // }
-
-        $url = $this->get_filepath($attachment_id);
+        if (has_image_size('medium')) {
+            $url = wp_get_attachment_image_url($attachment_id, 'medium');
+        } else {
+            $url = wp_get_original_image_url($attachment_id);
+        }
 
         return $url;
     }

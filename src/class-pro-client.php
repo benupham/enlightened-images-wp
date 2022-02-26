@@ -5,7 +5,7 @@ class SmartImageSearch_SisaPro_Client
 
   public function get_annotation($file_path, $features = 'WEB_DETECTION,OBJECT_LOCALIZATION')
   {
-    error_log("using pro client");
+    // error_log("using pro client");
 
     $baseurl = 'https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/proxy';
     $apikey = get_option('sisa_pro_api_key');
@@ -33,7 +33,7 @@ class SmartImageSearch_SisaPro_Client
       $response_message = wp_remote_retrieve_response_message($request);
     }
 
-    error_log($response_code . ' ' . $response_message);
+    // error_log($response_code . ' ' . $response_message);
 
     if (200 != $response_code && !empty($response_message)) {
       return new WP_Error($response_code, $response_message, $data);

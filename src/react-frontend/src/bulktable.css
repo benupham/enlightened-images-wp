@@ -44,6 +44,10 @@
   text-overflow: ellipsis;
   overflow: hidden;
 }
+.bulk-table td.alt-text span.existing-alt-text {
+  font-weight: normal;
+  color: #8c8f94;
+}
 .bulk-table th,
 .bulk-table td {
   padding: 10px;

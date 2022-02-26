@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react"
 import ReactDOM from "react-dom"
 import Settings from "./Settings"
 import "./index.css"
+import "@fontsource/alata"
 
 const App = (props) => {
   const [notice, setNotice] = useState([])
