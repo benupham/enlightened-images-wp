@@ -609,6 +609,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
             $alt = $cleaned_data['sisa_objects'][0];
         }
 
+        // Simply return the existing and new alt text, without changing the alt text
         if (!empty($existing = get_post_meta($p, '_wp_attachment_image_alt', true))) {
             return array('existing' => $existing, 'smartimage' => $alt);
         }
@@ -616,8 +617,9 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         $success = update_post_meta($p, '_wp_attachment_image_alt', $alt);
 
         if (false === $success) {
-            return new WP_Error(500, 'Failed to update alt text.', $alt);
+            return new WP_Error(500, 'Failed to update alt text for unknown reason.', array('existing' => '', 'smartimage' => $alt));
         }
+        // error_log('image ' . $p . ' alt text: ' . $alt);
 
         return array('existing' => '', 'smartimage' => $alt);
     }

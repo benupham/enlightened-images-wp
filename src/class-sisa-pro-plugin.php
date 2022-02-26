@@ -274,7 +274,7 @@ class SisaPro extends SmartImageSearch_WP_Base
 
             $p = $images[$i]->post_id;
 
-            $annotation_data = $this->annotation_an_image($p);
+            $annotation_data = $this->annotate_an_image($p);
 
             if (is_wp_error($annotation_data) || isset($annotation_data['error'])) {
                 $errors++;
@@ -297,7 +297,7 @@ class SisaPro extends SmartImageSearch_WP_Base
         return $response;
     }
 
-    public function annotation_an_image($p)
+    public function annotate_an_image($p)
     {
         $annotation_data = array();
         $gcv_result = array();
@@ -322,7 +322,7 @@ class SisaPro extends SmartImageSearch_WP_Base
         $gcv_result = $this->gcv_client->get_annotation($image, implode(',', $features));
 
         if (is_wp_error($gcv_result)) {
-            error_log(print_r($gcv_result, true));
+            // error_log(print_r($gcv_result, true));
             $annotation_data['error'] = $gcv_result;
             return $annotation_data;
         }
@@ -495,6 +495,7 @@ class SisaPro extends SmartImageSearch_WP_Base
             $alt = $cleaned_data['sisa_objects'][0];
         }
 
+        // Simply return the existing and new alt text, without changing the alt text
         if (!empty($existing = get_post_meta($p, '_wp_attachment_image_alt', true))) {
             return array('existing' => $existing, 'smartimage' => $alt);
         }
@@ -502,7 +503,7 @@ class SisaPro extends SmartImageSearch_WP_Base
         $success = update_post_meta($p, '_wp_attachment_image_alt', $alt);
 
         if (false === $success) {
-            return new WP_Error(500, 'Failed to update alt text.', $alt);
+            return new WP_Error(500, 'Failed to update alt text for unknown reason.', array('existing' => '', 'smartimage' => $alt));
         }
         // error_log('image ' . $p . ' alt text: ' . $alt);
 
@@ -602,6 +603,12 @@ class SisaPro extends SmartImageSearch_WP_Base
         } elseif ($annotate_upload == 'blocking') {
             $this->blocking_annotate($metadata, $attachment_id);
         }
+        // In case of error, set alt text to empty 
+        if (empty(get_post_meta($attachment_id, '_wp_attachment_image_alt', true))) {
+            update_post_meta($attachment_id, '_wp_attachment_image_alt', '');
+        }
+
+
         return $metadata;
     }
 
@@ -636,8 +643,8 @@ class SisaPro extends SmartImageSearch_WP_Base
         if (current_user_can('upload_files')) {
 
             $attachment_id = intval($_POST['attachment_id']);
-            $result = $this->annotation_an_image($attachment_id);
-            error_log(print_r($result, true));
+            $result = $this->annotate_an_image($attachment_id);
+            // error_log(print_r($result, true));
         }
 
         exit();
@@ -648,7 +655,7 @@ class SisaPro extends SmartImageSearch_WP_Base
 
         if (current_user_can('upload_files') && is_array($metadata)) {
 
-            $this->annotation_an_image($attachment_id);
+            $this->annotate_an_image($attachment_id);
         }
 
         return $metadata;

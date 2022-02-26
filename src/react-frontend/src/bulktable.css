@@ -35,7 +35,7 @@
 .bulk-table td.status {
   color: green;
 }
-.bulk-table td.status.Error {
+.bulk-table td.Error {
   color: red;
 }
 .bulk-table td.filename {
