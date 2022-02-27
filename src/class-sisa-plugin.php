@@ -88,8 +88,23 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         ));
     }
 
+    public function get_credits()
+    {
+        if (!isset($this->credits)) {
+            $account = $this->get_account_status(get_option('sisa_pro_api_key'));
+
+            if (isset($account->success)) {
+                $this->credits = (int) $account->data->credits;
+            } else {
+                $this->credits = null;
+            }
+        }
+        return $this->credits;
+    }
+
     public function api_get_sisa_settings($request)
     {
+
         $response = new WP_REST_RESPONSE(array(
             'success' => true,
             'options' => array(
@@ -103,6 +118,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 'text' => (int) get_option('sisa_text', (int) 0),
                 'logos' => (int) get_option('sisa_logos', (int) 0),
                 'landmarks' => (int) get_option('sisa_landmarks', (int) 0),
+                'credits' => $this->get_credits(),
             ),
         ), 200);
 
@@ -123,9 +139,9 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         update_option('sisa_logos', (int) sanitize_text_field(($json['options']['logos'])));
         update_option('sisa_landmarks', (int) sanitize_text_field(($json['options']['landmarks'])));
 
-        $sisa_pro = $this->check_pro_api_key(sanitize_text_field(($json['options']['proApiKey'])));
+        $sisa_pro = $this->get_account_status(sanitize_text_field(($json['options']['proApiKey'])));
 
-        if (true === $sisa_pro) {
+        if (isset($sisa_pro['data'])) {
             update_option('sisa_pro', (int) 1);
             $this->is_pro = true;
             $this->set_client();
@@ -148,6 +164,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 'text' => (int) get_option('sisa_text', (int) 0),
                 'logos' => (int) get_option('sisa_logos', (int) 0),
                 'landmarks' => (int) get_option('sisa_landmarks', (int) 0),
+                'credits' => $this->get_credits(),
             ),
         ), 200);
 
@@ -268,6 +285,10 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
 
             $annotation_data['alt_text'] = $alt;
 
+            if ($this->is_pro) {
+                $this->credits = $gcv_result->credits;
+            }
+
             $response[] = $annotation_data;
         }
 
@@ -277,6 +298,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
                 'image_data' => $response,
                 'count' => $query->found_posts - count($query->posts),
                 'errors' => $errors,
+                'credits' => $this->get_credits(),
             ),
         ), 200);
 
@@ -804,7 +826,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
     }
 
 
-    public function check_pro_api_key($pro_api_key)
+    public function get_account_status($pro_api_key)
     {
         $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/account?api_key=' . $pro_api_key, array(
             'headers' => array('Content-Type' => 'application/json'),
@@ -814,7 +836,7 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         $data = json_decode(wp_remote_retrieve_body($response));
 
         if (isset($data) && isset($data->success)) {
-            return true;
+            return $data;
         }
         return false;
     }

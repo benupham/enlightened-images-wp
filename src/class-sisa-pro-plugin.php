@@ -7,7 +7,6 @@ class SisaPro extends SmartImageSearch_WP_Base
     {
         parent::__construct();
         $this->is_pro = (int) get_option('sisa_pro') === 1 ? true : false;
-        $this->has_pro = true;
         update_option('sisa_pro_plugin', 1);
         // error_log($this->is_pro);
         $this->set_client();
@@ -20,6 +19,20 @@ class SisaPro extends SmartImageSearch_WP_Base
         } else {
             $this->gcv_client = new SmartImageSearch_GCV_Client();
         }
+    }
+
+    public function get_credits()
+    {
+        if (!isset($this->credits)) {
+            $account = $this->get_account_status(get_option('sisa_pro_api_key'));
+
+            if (isset($account->success)) {
+                $this->credits = (int) $account->data->credits;
+            } else {
+                $this->credits = null;
+            }
+        }
+        return $this->credits;
     }
 
     public function init()
@@ -90,6 +103,7 @@ class SisaPro extends SmartImageSearch_WP_Base
 
     public function api_get_sisa_settings($request)
     {
+
         $response = new WP_REST_RESPONSE(array(
             'success' => true,
             'options' => array(
@@ -103,6 +117,7 @@ class SisaPro extends SmartImageSearch_WP_Base
                 'text' => (int) get_option('sisa_text', (int) 0),
                 'logos' => (int) get_option('sisa_logos', (int) 0),
                 'landmarks' => (int) get_option('sisa_landmarks', (int) 0),
+                'credits' => $this->get_credits(),
             ),
         ), 200);
 
@@ -123,9 +138,9 @@ class SisaPro extends SmartImageSearch_WP_Base
         update_option('sisa_logos', (int) sanitize_text_field(($json['options']['logos'])));
         update_option('sisa_landmarks', (int) sanitize_text_field(($json['options']['landmarks'])));
 
-        $sisa_pro = $this->check_pro_api_key(sanitize_text_field(($json['options']['proApiKey'])));
+        $account = $this->get_account_status(sanitize_text_field(($json['options']['proApiKey'])));
 
-        if (true === $sisa_pro) {
+        if (isset($account->success)) {
             update_option('sisa_pro', (int) 1);
             $this->is_pro = true;
             $this->set_client();
@@ -148,6 +163,7 @@ class SisaPro extends SmartImageSearch_WP_Base
                 'text' => (int) get_option('sisa_text', (int) 0),
                 'logos' => (int) get_option('sisa_logos', (int) 0),
                 'landmarks' => (int) get_option('sisa_landmarks', (int) 0),
+                'credits' => $this->get_credits(),
             ),
         ), 200);
 
@@ -166,6 +182,76 @@ class SisaPro extends SmartImageSearch_WP_Base
         );
     }
 
+    public function get_images_missing_annotation($datetime)
+    {
+        $missing = array();
+
+        $annotation_options = $this->get_annotation_options();
+
+        $meta_query = null;
+
+        foreach ($annotation_options as $key => $value) {
+            if ($value === 1) {
+                $meta_query .= "meta_value NOT LIKE '%" . $key . "%' OR ";
+            }
+        }
+
+        if ($meta_query !== null) {
+            $meta_query = substr($meta_query, 0, -3);
+
+            global $wpdb;
+
+            $sisa_query = "
+            SELECT DISTINCT post_id 
+            FROM $wpdb->postmeta
+            INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` 
+            AND wp_posts.`post_type`= 'attachment' 
+            AND wp_posts.`post_date` < $datetime 
+            WHERE meta_key = 'sisa_meta'
+            AND meta_value IS NULL OR 
+            post_id IN 
+            (
+                SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'sisa_meta' AND 
+                (
+                    $meta_query
+                )
+            ) 
+            OR post_id NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'sisa_meta') 
+            ";
+
+            $annotation = $wpdb->get_results($sisa_query);
+
+            foreach ($annotation as $key => $value) {
+                $missing[] = $value->post_id;
+            }
+        }
+
+        return $missing;
+    }
+
+    public function get_images_missing_alt_text($datetime)
+    {
+        $missing = array();
+
+        if (1 === (int) get_option('sisa_alt_text', (int) 1)) {
+
+            global $wpdb;
+            $alt_text = $wpdb->get_results("
+            SELECT DISTINCT post_id 
+            FROM $wpdb->postmeta
+            INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` 
+            AND wp_posts.`post_type`= 'attachment' 
+            AND wp_posts.`post_date` < $datetime 
+            WHERE (meta_key = '_wp_attachment_image_alt' AND meta_value IS NULL OR meta_value = '')
+            ");
+            foreach ($alt_text as $key => $value) {
+                $missing[] = $value->post_id;
+            }
+        }
+
+        return $missing;
+    }
+
     public function pro_api_bulk_sisa($request)
     {
 
@@ -177,63 +263,15 @@ class SisaPro extends SmartImageSearch_WP_Base
         if (isset($start) && (string)(int)$start == $start && strlen($start) > 9) {
             $now = (int) $start;
         }
-
-        $annotation_options = $this->get_annotation_options();
-
-        $meta_query = '';
-
-        foreach ($annotation_options as $key => $value) {
-            if ($value === 1) {
-                $meta_query .= "meta_value NOT LIKE '%" . $key . "%' OR ";
-            }
-        }
-        $meta_query = substr($meta_query, 0, -3);
-
-        // error_log($meta_query);
-
-        global $wpdb;
         $datetime = "'" . date('Y-m-d H:i:s', $now) . "'";
-        $sisa_query = "
-        SELECT DISTINCT post_id 
-        FROM $wpdb->postmeta
-        INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` 
-        AND wp_posts.`post_type`= 'attachment' 
-        AND wp_posts.`post_date` < $datetime 
-        WHERE meta_key = 'sisa_meta'
-        AND meta_value IS NULL OR 
-        post_id IN 
-        (
-            SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'sisa_meta' AND 
-            (
-                $meta_query
-            )
-        ) 
-        OR post_id NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'sisa_meta') 
-        ";
 
-        // error_log($sisa_query);
+        $missing_annotation = $this->get_images_missing_annotation($datetime);
+        $missing_alt_text = $this->get_images_missing_alt_text($datetime);
 
-        $annotation = $wpdb->get_results($sisa_query);
-        $annotation_cnt = count($annotation);
-
-        $alt_text = array();
-
-        if (1 === (int) get_option('sisa_alt_text', (int) 1)) {
-
-            $alt_text = $wpdb->get_results("
-            SELECT DISTINCT post_id 
-            FROM $wpdb->postmeta
-            INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` 
-            AND wp_posts.`post_type`= 'attachment' 
-            AND wp_posts.`post_date` < $datetime 
-            WHERE (meta_key = '_wp_attachment_image_alt' AND meta_value IS NULL OR meta_value = '')
-            ");
-        }
-
-        $alt_text_cnt = count($alt_text);
-
-        $images = array_unique(array_merge($alt_text, $annotation), SORT_REGULAR);
+        $images = array_unique(array_merge($missing_alt_text, $missing_annotation), SORT_REGULAR);
         $images_cnt = count($images);
+        $alt_text_cnt = count($missing_alt_text);
+        $annotation_cnt = count($missing_annotation);
 
         error_log('total alt text images remaining:' . $alt_text_cnt);
         error_log('total annotation images remaining:' . $annotation_cnt);
@@ -250,7 +288,8 @@ class SisaPro extends SmartImageSearch_WP_Base
                     'count_alt_text' => $alt_text_cnt,
                     'errors' => 0,
                     'start' => $now,
-                    'estimate' => $this->get_estimate($images_cnt)
+                    'estimate' => $this->get_estimate($images_cnt),
+                    'credits' => $this->get_credits(),
                 ),
             ), 200);
         }
@@ -272,7 +311,7 @@ class SisaPro extends SmartImageSearch_WP_Base
 
         for ($i = 0; $i < $max_posts; $i++) {
 
-            $p = $images[$i]->post_id;
+            $p = $images[$i];
 
             $annotation_data = $this->annotate_an_image($p);
 
@@ -288,6 +327,7 @@ class SisaPro extends SmartImageSearch_WP_Base
             'body' => array(
                 'image_data' => $image_data,
                 'count' => $images_cnt - $max_posts,
+                'credits' => $this->get_credits(),
                 'errors' => $errors,
             ),
         ), 200);
@@ -309,8 +349,6 @@ class SisaPro extends SmartImageSearch_WP_Base
         $annotation_data['file'] = $attachment->post_name;
 
         $image = $this->get_image_url($p);
-
-
 
         if ($image === false) {
             $annotation_data['error'] = new WP_Error('bad_image', 'Image filepath not found');
@@ -334,6 +372,8 @@ class SisaPro extends SmartImageSearch_WP_Base
 
         $annotation_data['alt_text'] = $alt;
         $annotation_data['meta_data'] = $meta;
+        $this->credits = $gcv_result->credits;
+        $annotation_data['credits'] = $gcv_result->credits;
 
         return $annotation_data;
     }
@@ -732,7 +772,7 @@ class SisaPro extends SmartImageSearch_WP_Base
     }
 
 
-    public function check_pro_api_key($pro_api_key)
+    public function get_account_status($pro_api_key)
     {
         $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/account?api_key=' . $pro_api_key, array(
             'headers' => array('Content-Type' => 'application/json'),
@@ -740,9 +780,9 @@ class SisaPro extends SmartImageSearch_WP_Base
         ));
 
         $data = json_decode(wp_remote_retrieve_body($response));
-
+        error_log(print_r($data, true));
         if (isset($data) && isset($data->success)) {
-            return true;
+            return $data;
         }
         return false;
     }
