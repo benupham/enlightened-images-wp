@@ -39,10 +39,16 @@
   color: red;
 }
 .bulk-table td.filename {
-  width: 15%;
   color: #8c8f94;
+  width: 15%;
+  max-width: 200px;
+  overflow-wrap: break-word;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+.bulk-table td.filename a.image-link {
+  color: #8c8f94;
+  text-decoration: none;
 }
 .bulk-table td.alt-text span.existing-alt-text {
   font-weight: normal;

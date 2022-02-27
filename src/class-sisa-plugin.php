@@ -88,17 +88,18 @@ class SmartImageSearch extends SmartImageSearch_WP_Base
         ));
     }
 
+    public $credits = null;
+
     public function get_credits()
     {
-        if (!isset($this->credits)) {
+        if ($this->is_pro && !isset($this->credits)) {
             $account = $this->get_account_status(get_option('sisa_pro_api_key'));
 
             if (isset($account->success)) {
                 $this->credits = (int) $account->data->credits;
-            } else {
-                $this->credits = null;
             }
         }
+
         return $this->credits;
     }
 

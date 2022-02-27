@@ -2,7 +2,7 @@ import React from "react"
 import { ImageRow } from "./ImageRow"
 import "./bulktable.css"
 
-export const BulkTable = ({ images }) => {
+export const BulkTable = ({ images, urls, nonce, setImages }) => {
   return (
     <table className="bulk-table">
       <thead>
@@ -17,7 +17,9 @@ export const BulkTable = ({ images }) => {
       <tbody>
         {images &&
           images.map((image, index) => {
-            return <ImageRow image={image} key={index} />
+            return (
+              <ImageRow image={image} key={index} urls={urls} nonce={nonce} setImages={setImages} />
+            )
           })}
       </tbody>
     </table>

@@ -33,7 +33,7 @@ export const Dashboard = ({ urls, nonce, options }) => {
     } catch (error) {
       setErrorMessage(error)
     }
-    setStats({ total: data.count, errors: 0, remaining: data.count })
+    setStats({ total: data.count, errors: 0, remaining: data.count, credits: data.credits })
     setStartTime(data.start)
     bulkTotal.current = data.count
     bulkErrors.current = 0
@@ -47,7 +47,7 @@ export const Dashboard = ({ urls, nonce, options }) => {
 
     while (bulkRemaining.current > 0 && pause.current === false) {
       try {
-        const start = Date.now()
+        const startRun = Date.now()
 
         console.log(`${urls.proxy}?start=${startTime}`)
         response = await fetch(`${urls.proxy}?start=${startTime}`, {
@@ -57,8 +57,8 @@ export const Dashboard = ({ urls, nonce, options }) => {
         data = json.body
         console.log("bulk response", data)
 
-        const end = Date.now()
-        const elapsed = end - start
+        const endRun = Date.now()
+        const elapsed = endRun - startRun
         const msEst = elapsed * Math.ceil(data.count / data.image_data.length)
         const hourEst = msToTime(msEst)
         setEstimate(hourEst)
@@ -73,7 +73,8 @@ export const Dashboard = ({ urls, nonce, options }) => {
       setStats((prev) => ({
         ...prev,
         errors: prev.errors + data.errors,
-        remaining: data.count
+        remaining: data.count,
+        credits: data.credits
       }))
       console.log(stats)
       setImages((prev) => [...prev, ...data.image_data])
@@ -117,7 +118,9 @@ export const Dashboard = ({ urls, nonce, options }) => {
   return (
     <div className={options.isPro === 0 || options.hasPro === 0 ? `bulk wrap` : `bulk`}>
       <h3>Total images remaining to analyze: {stats.remaining}</h3>
-
+      {(options.isPro === 1 || options.hasPro === 1) && (
+        <h4 className="credits">Credits Remaining: {stats.credits}</h4>
+      )}
       {!bulkRunning && !paused && stats.remaining > 0 && (
         <button className="button button-primary trigger-bulk" onClick={handleBulkAnnotate}>
           Start Bulk Annotation
@@ -138,7 +141,9 @@ export const Dashboard = ({ urls, nonce, options }) => {
             <p>{errorMessage}</p>
           </div>
         )}{" "}
-        {options.hasPro === 1 && images && <BulkTable images={images} />}
+        {options.hasPro === 1 && images && (
+          <BulkTable images={images} urls={urls} nonce={nonce} setImages={setImages} />
+        )}
         {options.hasPro === 0 &&
           images &&
           images.map((image, index) => {

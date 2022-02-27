@@ -21,17 +21,18 @@ class SisaPro extends SmartImageSearch_WP_Base
         }
     }
 
+    public $credits = null;
+
     public function get_credits()
     {
-        if (!isset($this->credits)) {
+        if ($this->is_pro && !isset($this->credits)) {
             $account = $this->get_account_status(get_option('sisa_pro_api_key'));
 
             if (isset($account->success)) {
                 $this->credits = (int) $account->data->credits;
-            } else {
-                $this->credits = null;
             }
         }
+
         return $this->credits;
     }
 
@@ -344,6 +345,7 @@ class SisaPro extends SmartImageSearch_WP_Base
 
         $annotation_data['thumbnail'] = wp_get_attachment_image_url($p);
         $annotation_data['attachmentURL'] = '/wp-admin/upload.php?item=' . $p;
+        $annotation_data['id'] = (int) $p;
 
         $attachment = get_post($p);
         $annotation_data['file'] = $attachment->post_name;
@@ -629,6 +631,7 @@ class SisaPro extends SmartImageSearch_WP_Base
             'urls' => array(
                 'proxy' => rest_url('smartimagesearch/v1/proxy'),
                 'settings' => rest_url('smartimagesearch/v1/settings'),
+                'altText' => rest_url('smartimagesearch/v1/alttext'),
                 'media' => rest_url('wp/v2/media'),
             ),
             'nonce' => wp_create_nonce('wp_rest'),
