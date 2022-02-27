@@ -4,8 +4,9 @@ import { checkApiKey } from "./api"
 import { Dashboard } from "./Dashboard"
 import "./settings.css"
 import { Sidebar } from "./Sidebar"
+import { nonce, urls } from "./api"
 
-const Settings = ({ nonce, urls, setNotice, estimate, count }) => {
+const Settings = ({ setNotice, estimate, count }) => {
   const [options, setOptions] = useState({
     apiKey: "",
     proApiKey: "",

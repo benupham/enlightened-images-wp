@@ -1,3 +1,9 @@
+export const urls = window.smartimagesearch_ajax.urls
+export const mediaApi = window.smartimagesearch_ajax.urls.media
+export const proxyApi = window.smartimagesearch_ajax.urls.proxy
+export const settingsApi = window.smartimagesearch_ajax.urls.settings
+export const nonce = window.smartimagesearch_ajax.nonce
+
 export const checkApiKey = async (apiKey) =>
   fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, { method: "POST" })
     .then((response) => response.json())
@@ -9,7 +15,7 @@ export const checkApiKey = async (apiKey) =>
       }
     })
 
-export const updateAltText = async (id, altText, mediaApi, nonce) => {
+export const updateAltText = async (id, altText) => {
   console.log("alt text:" + altText)
   const strippedHTML = decodeURI(altText.replace(/(<([^>]+)>)/gi, ""))
   console.log("stripped text:" + strippedHTML)

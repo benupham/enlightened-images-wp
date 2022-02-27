@@ -2,7 +2,7 @@ import React, { useRef } from "react"
 import ContentEditable from "react-contenteditable"
 import { updateAltText } from "./api"
 
-export const ImageRow = ({ image, urls, nonce, setImages }) => {
+export const ImageRow = ({ image, setImages }) => {
   // console.log("image", image)
   let status = "OK"
   let metaData = image.meta_data
@@ -14,7 +14,7 @@ export const ImageRow = ({ image, urls, nonce, setImages }) => {
   }
 
   const handleBlur = async () => {
-    const result = await updateAltText(image.id, altText.current, urls.media, nonce)
+    const result = await updateAltText(image.id, altText.current)
     setImages((prev) => {
       const newImages = [...prev].map((img) => {
         return img.id === image.id
@@ -49,12 +49,13 @@ export const ImageRow = ({ image, urls, nonce, setImages }) => {
           onChange={handleChange}
         />
 
-        {image.alt_text?.existing != image.alt_text?.smartimage && (
-          <>
-            <br />
-            <span className="existing-alt-text">{image.alt_text?.existing}</span>
-          </>
-        )}
+        {image.alt_text?.existing != image.alt_text?.smartimage &&
+          image.alt_text.existing.length > 0 && (
+            <>
+              <br />
+              <span className="existing-alt-text">{image.alt_text?.existing}</span>
+            </>
+          )}
       </td>
       <td className={`sisa-meta ${status}`}>{metaData}</td>
       <td className={`status ${status}`}>{status}</td>

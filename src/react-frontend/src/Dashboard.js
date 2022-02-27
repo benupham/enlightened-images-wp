@@ -4,8 +4,9 @@ import { ProgressBar } from "./ProgressBar"
 import { ImageCard } from "./ImageCard"
 import { BulkTable } from "./BulkTable"
 import { msToTime } from "./helper"
+import { nonce, urls } from "./api"
 
-export const Dashboard = ({ urls, nonce, options }) => {
+export const Dashboard = ({ options }) => {
   const [images, setImages] = useState([])
   const [errorMessage, setErrorMessage] = useState("")
   const [bulkRunning, setBulkRunning] = useState(false)
@@ -141,9 +142,7 @@ export const Dashboard = ({ urls, nonce, options }) => {
             <p>{errorMessage}</p>
           </div>
         )}{" "}
-        {options.hasPro === 1 && images && (
-          <BulkTable images={images} urls={urls} nonce={nonce} setImages={setImages} />
-        )}
+        {options.hasPro === 1 && images && <BulkTable images={images} setImages={setImages} />}
         {options.hasPro === 0 &&
           images &&
           images.map((image, index) => {

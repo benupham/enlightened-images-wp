@@ -3,12 +3,12 @@ import ReactDOM from "react-dom"
 import Settings from "./Settings"
 import "./index.css"
 import "@fontsource/alata"
+import { nonce, urls } from "./api"
 
 const App = (props) => {
   const [notice, setNotice] = useState([])
   const [estimate, setEstimate] = useState()
   const [count, setCount] = useState()
-  const { urls, nonce } = window.smartimagesearch_ajax
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [notice])
@@ -42,13 +42,7 @@ const App = (props) => {
       </h1>
       <div className="wrap sisa">
         {notice.length > 0 && <Notice notice={notice} />}
-        <Settings
-          nonce={nonce}
-          urls={urls}
-          setNotice={setNotice}
-          estimate={estimate}
-          count={count}
-        />
+        <Settings setNotice={setNotice} estimate={estimate} count={count} />
       </div>
     </>
   )
