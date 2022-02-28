@@ -7,10 +7,17 @@ export const ImageRow = ({ image, setImages }) => {
   let status = "OK"
   let metaData = image.meta_data
 
-  const altText = useRef("")
+  const altText = useRef(image.alt_text?.smartimage)
 
   const handleChange = (evt) => {
     altText.current = evt.target.value
+  }
+
+  const handleKeyDown = (evt) => {
+    if (evt.key === "Enter" || evt.key === "Tab") {
+      evt.preventDefault()
+      evt.currentTarget.blur()
+    }
   }
 
   const handleBlur = async () => {
@@ -30,6 +37,7 @@ export const ImageRow = ({ image, setImages }) => {
     status = "Error"
     metaData = image.error.errors[Object.keys(image.error.errors)[0]]
   }
+
   return (
     <tr className="image-row">
       <td className="thumbnail">
@@ -44,9 +52,11 @@ export const ImageRow = ({ image, setImages }) => {
       </td>
       <td className="alt-text">
         <ContentEditable
+          className="editable"
           html={image.alt_text?.smartimage}
           onBlur={handleBlur}
           onChange={handleChange}
+          onKeyDown={handleKeyDown}
         />
 
         {image.alt_text?.existing != image.alt_text?.smartimage &&

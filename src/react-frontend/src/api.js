@@ -34,3 +34,23 @@ export const updateAltText = async (id, altText) => {
     throw new Error(error)
   }
 }
+
+export const updateAttachmentTitle = async (id, title) => {
+  console.log("title:" + title)
+  const strippedHTML = decodeURI(title.replace(/(<([^>]+)>)/gi, ""))
+  console.log("stripped text:" + strippedHTML)
+  try {
+    const response = await fetch(mediaApi + "/" + id, {
+      method: "POST",
+      body: JSON.stringify({
+        title: strippedHTML
+      }),
+      headers: new Headers({ "X-WP-Nonce": nonce, "Content-Type": "application/json" })
+    })
+    const json = await response.json()
+    console.log(json)
+    return json.alt_text
+  } catch (error) {
+    throw new Error(error)
+  }
+}
