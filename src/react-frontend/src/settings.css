@@ -37,3 +37,6 @@ input[type="radio"]:checked + label {
 .sisa-options-table h4 {
   margin-top: 5px;
 }
+.filler {
+  height: 50px;
+}

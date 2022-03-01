@@ -51,14 +51,15 @@ export const ImageRow = ({ image, setImages }) => {
         </a>
       </td>
       <td className="alt-text">
-        <ContentEditable
-          className="editable"
-          html={image.alt_text?.smartimage}
-          onBlur={handleBlur}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-        />
-
+        {image.alt_text?.smartimage && (
+          <ContentEditable
+            className="editable"
+            html={image.alt_text?.smartimage}
+            onBlur={handleBlur}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+          />
+        )}
         {image.alt_text?.existing != image.alt_text?.smartimage &&
           image.alt_text.existing.length > 0 && (
             <>

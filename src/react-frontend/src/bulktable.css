@@ -34,10 +34,12 @@
 .editable:hover {
   cursor: text;
   background-color: #f7f7f7;
+  cursor: pointer;
 }
 .editable:focus {
   border: 1px solid #f7f7f7;
   background-color: #fcf8e1;
+  cursor: text;
 }
 .bulk-table .thumbnail {
   width: 75px;

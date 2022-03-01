@@ -24,6 +24,7 @@ const Settings = ({ setNotice, estimate, count }) => {
   const [isOpen, setOpen] = useState(false)
 
   const updateOptions = async (event) => {
+    setNotice("")
     event.preventDefault()
     setSaving(true)
     console.log("sending options")
@@ -56,12 +57,12 @@ const Settings = ({ setNotice, estimate, count }) => {
           "error"
         ])
       }
-    } else if (json.options.isPro === 0) {
-      setNotice(["EnlightenedImages API key is invalid. Please check your account.", "error"])
-    } else if (json.options.isPro === 1) {
-      setNotice([`Options saved, using EnlightenedImages API key.`, "success"])
-    } else {
-      setNotice([`Options saved, using Google API key.`, "success"])
+    } else if (json.options.isPro !== options.isPro) {
+      if (json.options.isPro === 0) {
+        setNotice(["EnlightenedImages API key is invalid. Please check your account.", "error"])
+      } else {
+        setNotice([`Options saved, using EnlightenedImages API key.`, "success"])
+      }
     }
 
     setOpen(json.options.isPro == 0 ? true : false)
@@ -316,6 +317,7 @@ const Settings = ({ setNotice, estimate, count }) => {
               <button type="submit" className="button" disabled={isSaving}>
                 Save Settings
               </button>
+              <div className="filler"></div>
             </div>
           </form>
         </Accordion>
