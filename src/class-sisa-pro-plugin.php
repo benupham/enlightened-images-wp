@@ -1,6 +1,6 @@
 <?php
 
-class SisaPro extends SmartImageSearch_WP_Base
+class SisaPro extends Sisa_WP_Base
 {
 
     public function __construct()
@@ -76,7 +76,7 @@ class SisaPro extends SmartImageSearch_WP_Base
     {
         $additional = array(
             'smartimagesearch' => sprintf(
-                '<a href="tools.php?page=smartimagesearch">%s</a>',
+                '<a href="upload.php?page=smartimagesearch">%s</a>',
                 esc_html__('Get Started', 'smartimagesearch')
             ),
         );

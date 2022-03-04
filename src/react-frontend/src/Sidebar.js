@@ -4,7 +4,7 @@ import "./sidebar.css"
 export const Sidebar = ({ estimate, count, isPro, hasPro }) => {
   return (
     <div className="sidebar">
-      {isPro === 0 && count > 0 && (
+      {isPro === 0 && count > 0 && typeof estimate === "number" && (
         <div className="estimate">
           <h3 className="title">Purchase an API Key</h3>
           <p>
