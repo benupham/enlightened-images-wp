@@ -11,9 +11,7 @@ export const ImageCard = ({ image }) => {
         </a>
       </div>
       <div className="details">
-        <div className="alt-text">
-          <div className="alt-text">&#8220;{image.alt_text?.smartimage}&#8221;</div>
-        </div>
+        <div className="alt-text">&#8220;{image.alt_text?.smartimage}&#8221;</div>
         <div className="file">{image.file}</div>
       </div>
     </div>

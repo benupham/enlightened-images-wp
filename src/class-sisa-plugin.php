@@ -215,7 +215,8 @@ class Sisa extends Sisa_WP_Base
                     'count' => $query->found_posts,
                     'errors' => 0,
                     'start' => $now,
-                    'estimate' => $this->get_estimate($query->found_posts)
+                    'estimate' => $this->get_estimate($query->found_posts),
+                    'credits' => $this->get_credits(),
                 ),
             ), 200);
 
@@ -471,7 +472,7 @@ class Sisa extends Sisa_WP_Base
 
     public function get_account_status($pro_api_key)
     {
-        $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/account?api_key=' . $pro_api_key, array(
+        $response = wp_remote_get('https://enlightenedimageswp.com/wp-json/smartimageserver/v1/account?api_key=' . $pro_api_key, array(
             'headers' => array('Content-Type' => 'application/json'),
             'method' => 'GET',
         ));
@@ -486,7 +487,7 @@ class Sisa extends Sisa_WP_Base
 
     public function get_estimate($image_count)
     {
-        $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/estimate?imageCount=' . $image_count, array(
+        $response = wp_remote_get('https://enlightenedimageswp.com/wp-json/smartimageserver/v1/estimate?imageCount=' . $image_count, array(
             'headers' => array('Content-Type' => 'application/json'),
             'method' => 'GET',
         ));

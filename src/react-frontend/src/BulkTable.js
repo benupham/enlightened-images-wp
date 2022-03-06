@@ -9,7 +9,10 @@ export const BulkTable = ({ images, setImages }) => {
         <tr>
           <th className="thumbnail">Image</th>
           <th className="filename">File</th>
-          <th className="alt-text">Alt Text</th>
+          <th className="alt-text">
+            Alt Text <br />
+            <span>click text to update</span>
+          </th>
           <th className="sisa-meta">Annotation Metadata</th>
           <th className="status">Status</th>
         </tr>

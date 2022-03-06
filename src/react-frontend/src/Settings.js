@@ -135,7 +135,7 @@ const Settings = ({ setNotice, estimate, count }) => {
                     />
                     <p>
                       <a
-                        href="https://smart-image-ai.lndo.site/"
+                        href="https://enlightenedimageswp.com"
                         target="_blank"
                         rel="noopener noreferrer">
                         Get your EnlightenedImages API key here.

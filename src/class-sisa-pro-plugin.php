@@ -8,7 +8,6 @@ class SisaPro extends Sisa_WP_Base
         parent::__construct();
         $this->is_pro = (int) get_option('sisa_pro') === 1 ? true : false;
         update_option('sisa_pro_plugin', 1);
-        // error_log($this->is_pro);
         $this->set_client();
     }
 
@@ -777,7 +776,7 @@ class SisaPro extends Sisa_WP_Base
 
     public function get_account_status($pro_api_key)
     {
-        $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/account?api_key=' . $pro_api_key, array(
+        $response = wp_remote_get('https://enlightenedimageswp.com/wp-json/smartimageserver/v1/account?api_key=' . $pro_api_key, array(
             'headers' => array('Content-Type' => 'application/json'),
             'method' => 'GET',
         ));
@@ -792,7 +791,7 @@ class SisaPro extends Sisa_WP_Base
 
     public function get_estimate($image_count)
     {
-        $response = wp_remote_get('https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/estimate?imageCount=' . $image_count, array(
+        $response = wp_remote_get('https://enlightenedimageswp.com/wp-json/smartimageserver/v1/estimate?imageCount=' . $image_count, array(
             'headers' => array('Content-Type' => 'application/json'),
             'method' => 'GET',
         ));

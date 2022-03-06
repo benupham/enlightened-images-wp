@@ -12,7 +12,7 @@ export const Sidebar = ({ estimate, count, isPro, hasPro }) => {
           </p>
           <span className="price">${estimate}</span>
           <a
-            href={`https://dev-smart-image-ai.pantheonsite.io/checkout/?count=${count}`}
+            href={`https://enlightenedimageswp.com/checkout/?count=${count}`}
             target="_blank"
             rel="noreferrer"
             className="button-primary">
@@ -29,7 +29,7 @@ export const Sidebar = ({ estimate, count, isPro, hasPro }) => {
           </p>
           <span className="price">$5.99</span>
           <a
-            href={`https://dev-smart-image-ai.pantheonsite.io/checkout/?count=${count}&pro=1`}
+            href={`https://enlightenedimageswp.com/checkout/?count=${count}&pro=1`}
             target="_blank"
             rel="noreferrer"
             className="button-primary">

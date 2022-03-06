@@ -7,7 +7,7 @@ class SmartImageSearch_SisaPro_Client
   {
     // error_log("using pro client");
 
-    $baseurl = 'https://smart-image-ai.lndo.site/wp-json/smartimageserver/v1/proxy';
+    $baseurl = 'https://enlightenedimageswp.com/wp-json/smartimageserver/v1/proxy';
     $apikey = get_option('sisa_pro_api_key');
 
     $request = wp_remote_get($baseurl . '?image=' . $file_path . '&api_key=' . $apikey . '&features=' . $features, array(
