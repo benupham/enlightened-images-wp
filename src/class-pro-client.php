@@ -5,7 +5,7 @@ class SmartImageSearch_SisaPro_Client
 
   public function get_annotation($file_path, $features = 'WEB_DETECTION,OBJECT_LOCALIZATION')
   {
-    // error_log("using pro client");
+    error_log("using pro client");
 
     $baseurl = 'https://enlightenedimageswp.com/wp-json/smartimageserver/v1/proxy';
     $apikey = get_option('sisa_pro_api_key');
