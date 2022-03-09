@@ -6,3 +6,4 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 }
 
 delete_option('sisa_api_key');
+delete_option('sisa_pro_api_key');

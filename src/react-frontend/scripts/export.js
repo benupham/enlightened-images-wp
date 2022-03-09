@@ -2,10 +2,8 @@ const fs = require("fs")
 const archiver = require("archiver")
 const path = require("path")
 
-const prefix = "smart-image-search-ai" // folder name
-const output = fs.createWriteStream(
-  path.resolve(__dirname, "../../../../smart-image-search-ai.zip")
-)
+const prefix = "enlightened-images" // folder name
+const output = fs.createWriteStream(path.resolve(__dirname, "../../../../enlightened-images.zip"))
 const archive = archiver("zip", { zlib: { level: 9 } }) // Sets the compression level.
 
 // listen for all archive data to be written
@@ -43,9 +41,12 @@ archive.pipe(output)
 archive.glob("../../src/react-frontend/build/static/js/main.*.js", null)
 archive.glob("../../src/react-frontend/build/static/js/main.*.js.map", null)
 archive.glob("../../src/react-frontend/build/static/css/main.*.css", null)
-archive.glob("../../src/*.php")
-archive.file(path.resolve(__dirname, "../../../smart-image-search-ai.php"), {
-  name: "smart-image-search-ai.php"
+archive.glob("../../src/class-gcv-client.php")
+archive.glob("../../src/class-pro-client.php")
+archive.glob("../../src/class-sisa-plugin.php")
+archive.glob("../../src/class-sisa-wp-base.php")
+archive.file(path.resolve(__dirname, "../../../enlightened-images.php"), {
+  name: "enlightened-images.php"
 })
 archive.file(path.resolve(__dirname, "../../../uninstall.php"), {
   name: "uninstall.php"
