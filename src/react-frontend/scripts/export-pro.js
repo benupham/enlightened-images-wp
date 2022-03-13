@@ -2,19 +2,6 @@ const fs = require("fs")
 const archiver = require("archiver")
 const path = require("path")
 
-fs.readFile("../../../enlightened-images.php", "utf8", function (err, data) {
-  if (err) {
-    return console.log(err)
-  }
-  let result = data.replace("Plugin Name: EnlightenedImages", "Plugin Name: EnlightenedImages Pro")
-  result = data.replace("/src/class-sisa-plugin.php", "/src/class-sisa-pro-plugin.php")
-  result = data.replace("new Sisa()", "new SisaPro()")
-
-  fs.writeFile("../../../enlightened-images.php", result, "utf8", function (err) {
-    if (err) return console.log(err)
-  })
-})
-
 const prefix = "enlightened-images-pro" // folder name
 const output = fs.createWriteStream(
   path.resolve(__dirname, "../../../../enlightened-images-pro.zip")
@@ -60,7 +47,7 @@ archive.glob("../../src/class-gcv-client.php")
 archive.glob("../../src/class-pro-client.php")
 archive.glob("../../src/class-sisa-pro-plugin.php")
 archive.glob("../../src/class-sisa-wp-base.php")
-archive.file(path.resolve(__dirname, "../../../enlightened-images.php"), {
+archive.file(path.resolve(__dirname, "../../../enlightened-images-pro.php"), {
   name: "enlightened-images-pro.php"
 })
 archive.file(path.resolve(__dirname, "../../../uninstall.php"), {
