@@ -63,8 +63,7 @@ export const ImageRow = ({ image, setImages }) => {
         {image.alt_text?.existing != image.alt_text?.smartimage &&
           image.alt_text.existing.length > 0 && (
             <>
-              <br />
-              <span className="existing-alt-text">{image.alt_text?.existing}</span>
+              <span className="existing-alt-text">current: {image.alt_text?.existing}</span>
             </>
           )}
       </td>

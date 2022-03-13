@@ -11,7 +11,7 @@ export const BulkTable = ({ images, setImages }) => {
           <th className="filename">File</th>
           <th className="alt-text">
             Alt Text <br />
-            <span>click text to update</span>
+            <span>click on text to edit</span>
           </th>
           <th className="sisa-meta">Annotation Metadata</th>
           <th className="status">Status</th>

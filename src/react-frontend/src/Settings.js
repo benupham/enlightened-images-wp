@@ -49,9 +49,6 @@ const Settings = ({ setNotice, estimate, count }) => {
 
         setNotice(["API key saved and validated with Google API!", "success"])
       } catch (error) {
-        // if (error.message == "The request is missing a valid API key.") {
-        //   error.message = "Google API key not valid. Please check your Google Cloud Vision account."
-        // }
         setNotice([
           `Google has a problem with your API key: ${error.message} Please check your Google account, this is not a problem with this plugin.`,
           "error"

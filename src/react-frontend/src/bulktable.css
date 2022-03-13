@@ -34,6 +34,7 @@
 .editable:hover {
   cursor: text;
   background-color: #f7f7f7;
+  border-color: #f1d21e;
   cursor: pointer;
 }
 .editable:focus {
@@ -66,9 +67,12 @@
   color: #8c8f94;
   text-decoration: none;
 }
-.bulk-table td.alt-text span.existing-alt-text {
+.bulk-table .alt-text span {
   font-weight: normal;
   color: #8c8f94;
+}
+.bulk-table .alt-text span.existing-alt-text {
+  line-height: 20px;
 }
 .bulk-table th,
 .bulk-table td {

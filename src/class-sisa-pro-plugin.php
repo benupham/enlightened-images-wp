@@ -206,7 +206,7 @@ class SisaPro extends Sisa_WP_Base
             FROM $wpdb->postmeta
             INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` 
             AND wp_posts.`post_type`= 'attachment' 
-            AND wp_posts.`post_date` < $datetime 
+            AND wp_posts.`post_date` < '$datetime' 
             WHERE meta_key = 'sisa_meta'
             AND meta_value IS NULL OR 
             post_id IN 
@@ -218,6 +218,8 @@ class SisaPro extends Sisa_WP_Base
             ) 
             OR post_id NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'sisa_meta') 
             ";
+
+            error_log('missing annotation query: ' . $sisa_query);
 
             $annotation = $wpdb->get_results($sisa_query);
 
@@ -241,7 +243,7 @@ class SisaPro extends Sisa_WP_Base
             FROM $wpdb->postmeta
             INNER JOIN wp_posts ON wp_posts.`ID`=wp_postmeta.`post_id` 
             AND wp_posts.`post_type`= 'attachment' 
-            AND wp_posts.`post_date` < $datetime 
+            AND wp_posts.`post_date` < '$datetime'
             WHERE (meta_key = '_wp_attachment_image_alt' AND meta_value IS NULL OR meta_value = '')
             ");
             foreach ($alt_text as $key => $value) {
@@ -263,7 +265,7 @@ class SisaPro extends Sisa_WP_Base
         if (isset($start) && (string)(int)$start == $start && strlen($start) > 9) {
             $now = (int) $start;
         }
-        $datetime = "'" . date('Y-m-d H:i:s', $now) . "'";
+        $datetime = date('Y-m-d H:i:s', $now);
 
         $missing_annotation = $this->get_images_missing_annotation($datetime);
         $missing_alt_text = $this->get_images_missing_alt_text($datetime);
@@ -313,7 +315,7 @@ class SisaPro extends Sisa_WP_Base
 
             $p = $images[$i];
 
-            $annotation_data = $this->annotate_an_image($p);
+            $annotation_data = $this->annotate_an_image($p, $datetime);
 
             if (is_wp_error($annotation_data) || isset($annotation_data['error'])) {
                 $errors++;
@@ -337,7 +339,7 @@ class SisaPro extends Sisa_WP_Base
         return $response;
     }
 
-    public function annotate_an_image($p)
+    public function annotate_an_image($p, $datetime)
     {
         $annotation_data = array();
         $gcv_result = array();
@@ -369,7 +371,7 @@ class SisaPro extends Sisa_WP_Base
         $cleaned_data = $this->clean_up_gcv_data($gcv_result);
 
         $alt = $this->update_image_alt_text($cleaned_data, $p, true);
-        $meta = $this->update_attachment_meta($cleaned_data, $p);
+        $meta = $this->update_attachment_meta($cleaned_data, $p, $datetime);
 
         $annotation_data['alt_text'] = $alt;
         $annotation_data['meta_data'] = $meta;
@@ -402,7 +404,7 @@ class SisaPro extends Sisa_WP_Base
         return $features;
     }
 
-    public function update_attachment_meta($cleaned_data, $p)
+    public function update_attachment_meta($cleaned_data, $p, $datetime)
     {
         $sisa_search = array();
 
@@ -421,6 +423,8 @@ class SisaPro extends Sisa_WP_Base
 
         $current_meta = (array) get_post_meta($p, 'sisa_meta', true);
         update_post_meta($p, 'sisa_meta', array_merge($current_meta, $cleaned_data));
+
+        update_post_meta($p, 'sisa_datetime', $datetime);
 
         return $new_sisa_search;
     }
@@ -685,7 +689,8 @@ class SisaPro extends Sisa_WP_Base
         if (current_user_can('upload_files')) {
 
             $attachment_id = intval($_POST['attachment_id']);
-            $result = $this->annotate_an_image($attachment_id);
+            $datetime = "'" . date('Y-m-d H:i:s') . "'";
+            $result = $this->annotate_an_image($attachment_id, $datetime);
             // error_log(print_r($result, true));
         }
 
@@ -697,7 +702,8 @@ class SisaPro extends Sisa_WP_Base
 
         if (current_user_can('upload_files') && is_array($metadata)) {
 
-            $this->annotate_an_image($attachment_id);
+            $datetime = "'" . date('Y-m-d H:i:s') . "'";
+            $this->annotate_an_image($attachment_id, $datetime);
         }
 
         return $metadata;

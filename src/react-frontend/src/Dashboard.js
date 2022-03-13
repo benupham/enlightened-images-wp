@@ -10,27 +10,27 @@ export const Dashboard = ({ options }) => {
   const [images, setImages] = useState([])
   const [errorMessage, setErrorMessage] = useState("")
   const [bulkRunning, setBulkRunning] = useState(false)
-  const [complete, setComplete] = useState(false)
   const [stats, setStats] = useState({})
-  const bulkTotal = useRef()
-  const bulkRemaining = useRef()
-  const bulkErrors = useRef()
-  const pause = useRef(false)
   const [paused, setPaused] = useState(false)
   const [startTime, setStartTime] = useState()
   const [estimate, setEstimate] = useState()
 
+  const bulkTotal = useRef()
+  const bulkRemaining = useRef()
+  const bulkErrors = useRef()
+  const pause = useRef(false)
+
   const prepBulkAnnotate = async () => {
     let response = null
     let data = {}
-    // console.log(urls)
+
     try {
       response = await fetch(urls.proxy, {
-        headers: new Headers({ "X-WP-Nonce": nonce })
+        headers: new Headers({ "X-WP-Nonce": nonce, "Cache-Control": "no-cache" })
       })
       const json = await response.json()
       data = json.body
-      console.log(data)
+      console.log("prepbulk data", data)
     } catch (error) {
       setErrorMessage(error)
     }
@@ -91,13 +91,11 @@ export const Dashboard = ({ options }) => {
       }
     }
     setBulkRunning(false)
-
-    if (bulkRemaining.current === 0) setComplete(true)
   }, [urls, nonce, startTime])
 
   useEffect(() => {
     prepBulkAnnotate()
-  }, [])
+  }, [options])
 
   const handleBulkAnnotate = (e) => {
     e.preventDefault()
@@ -120,10 +118,7 @@ export const Dashboard = ({ options }) => {
     <div className={options.isPro === 0 || options.hasPro === 0 ? `bulk wrap` : `bulk`}>
       <h3>Total images remaining to analyze: {stats.remaining}</h3>
       {(options.isPro === 1 || options.hasPro === 1) && (
-        <h4 className="credits">
-          Credits Remaining: {stats.credits}
-          {console.log(stats)}{" "}
-        </h4>
+        <h4 className="credits">Credits Remaining: {stats.credits} </h4>
       )}
       {!bulkRunning && !paused && stats.remaining > 0 && (
         <button className="button button-primary trigger-bulk" onClick={handleBulkAnnotate}>

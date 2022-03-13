@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: EnlightenedImages
+ * EnlightenedImages
  * Description: Use the power of machine learning to add alt text and index the Media Library by content, emotions, in-image-text and more.
  * Version: 1.0
  * Author: Ben Upham

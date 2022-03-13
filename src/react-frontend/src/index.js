@@ -35,6 +35,8 @@ const App = (props) => {
     getEstimate()
   }, [])
 
+  if (process.env.NODE_ENV === "production") console.log = function no_console() {}
+
   return (
     <>
       <h1>
