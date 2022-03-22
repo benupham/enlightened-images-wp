@@ -11,7 +11,7 @@
 
 function sisa_check_free_version()
 {
-  if (is_plugin_active('enlightened-images/enlightened-images.php')) {
+  if (class_exists('Sisa')) {
     add_action('admin_notices', 'sisa_deactivate_free_notice');
   } else {
     require_once dirname(__FILE__) . '/src/class-sisa-wp-base.php';
@@ -29,8 +29,7 @@ function sisa_deactivate_free_notice()
 {
 ?>
   <div class="notice notice-error is-dismissible">
-    <p><?php echo __('You need to deactivate the free version of the EnlightenedImages plugin on the plugins page for the Pro version to work.', 'smartimagesearch'); ?></p>
-    <p><?php echo sprintf(__('You need to deactivate the free version of the EnlightenedImages plugin on the plugins page for the Pro version to work. %splugins page%s', 'event-calendar-newsletter'), '<a href="' . wp_nonce_url('plugins.php?action=deactivate&amp;plugin=enlightened-images%2Fenlightened-images.php&amp;plugin_status=all&amp;paged=1&amp;s=', 'deactivate-plugin_enlightened-images/enlightened-images.php') . '">', '</a>'); ?></p>
+    <p><?php echo sprintf(__('You need to deactivate the free version of the EnlightenedImages plugin on the plugins page for the Pro version to work. %splugins page%s', 'smartimagesearch'), '<a href="' . wp_nonce_url('plugins.php?action=deactivate&amp;plugin=enlightened-images%2Fenlightened-images.php&amp;plugin_status=all&amp;paged=1&amp;s=', 'deactivate-plugin_enlightened-images/enlightened-images.php') . '">', '</a>'); ?></p>
 
   </div>
 <?php
