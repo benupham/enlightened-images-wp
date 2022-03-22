@@ -94,3 +94,7 @@ button.button-primary.trigger-bulk,
 button.trigger-bulk {
   font-size: 1.3em !important;
 }
+a.buy-credits {
+  font-weight: 400;
+  font-size: 0.85em;
+}

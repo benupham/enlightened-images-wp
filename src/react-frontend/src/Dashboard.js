@@ -118,7 +118,17 @@ export const Dashboard = ({ options }) => {
     <div className={options.isPro === 0 || options.hasPro === 0 ? `bulk wrap` : `bulk`}>
       <h3>Total images remaining to analyze: {stats.remaining}</h3>
       {(options.isPro === 1 || options.hasPro === 1) && (
-        <h4 className="credits">Credits Remaining: {stats.credits} </h4>
+        <>
+          <h4 className="credits">
+            Credits Remaining: {stats.credits}{" "}
+            <a
+              href="https://enlightenedimageswp.com/my-account/"
+              className="buy-credits"
+              target="_blank">
+              Buy more credits
+            </a>{" "}
+          </h4>
+        </>
       )}
       {!bulkRunning && !paused && stats.remaining > 0 && (
         <button className="button button-primary trigger-bulk" onClick={handleBulkAnnotate}>
