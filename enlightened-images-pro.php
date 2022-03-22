@@ -14,11 +14,10 @@ function sisa_check_free_version()
   if (class_exists('Sisa')) {
     add_action('admin_notices', 'sisa_deactivate_free_notice');
   } else {
-    require_once dirname(__FILE__) . '/src/class-sisa-wp-base.php';
     require_once dirname(__FILE__) . '/src/class-sisa-pro-plugin.php';
     require_once dirname(__FILE__) . '/src/class-gcv-client.php';
     require_once dirname(__FILE__) . '/src/class-pro-client.php';
-    $sisa_plugin = new SisaPro();
+    $sisa_plugin = SisaPro::getInstance();
   }
 }
 

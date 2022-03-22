@@ -1,15 +1,37 @@
 <?php
 
-class Sisa extends Sisa_WP_Base
+class Sisa
 {
+    private static $instance = null;
 
-    public function __construct()
+    public static function getInstance()
     {
-        parent::__construct();
+        if (self::$instance == null) {
+            self::$instance = new Sisa();
+        }
+
+        return self::$instance;
+    }
+
+    private function __construct()
+    {
+        add_action('init', $this->get_method('init'));
+
+        if (is_admin()) {
+            add_action('admin_init', $this->get_method('admin_init'));
+            add_action('admin_menu', $this->get_method('admin_menu'));
+            add_action('admin_init', $this->get_method('ajax_init'));
+        }
+
         $this->is_pro = (int) get_option('sisa_pro') === 1 ? true : false;
         $this->has_pro = false;
         update_option('sisa_pro_plugin', (int) 0);
         $this->set_client();
+    }
+
+    protected function get_method($name)
+    {
+        return array($this, $name);
     }
 
     public function set_client()

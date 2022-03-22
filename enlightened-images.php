@@ -9,9 +9,8 @@
  * License: GPLv2 or later
  */
 
-require dirname(__FILE__) . '/src/class-sisa-wp-base.php';
 require dirname(__FILE__) . '/src/class-sisa-plugin.php';
 require dirname(__FILE__) . '/src/class-gcv-client.php';
 require dirname(__FILE__) . '/src/class-pro-client.php';
 
-$sis_plugin = new Sisa();
+$sis_plugin = Sisa::getInstance();
