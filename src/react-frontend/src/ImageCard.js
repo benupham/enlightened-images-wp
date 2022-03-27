@@ -3,6 +3,7 @@ import "./imagecard.css"
 
 export const ImageCard = ({ image }) => {
   // console.log("image", image)
+
   return (
     <div className="image-card">
       <div className="thumb">
@@ -13,6 +14,9 @@ export const ImageCard = ({ image }) => {
       <div className="details">
         <div className="alt-text">&#8220;{image.alt_text?.smartimage}&#8221;</div>
         <div className="file">{image.file}</div>
+        {image.error && (
+          <div className="error">{image.error.errors[Object.keys(image.error.errors)[0]]}</div>
+        )}
       </div>
     </div>
   )

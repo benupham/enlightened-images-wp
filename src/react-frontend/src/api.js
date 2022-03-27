@@ -4,8 +4,13 @@ export const proxyApi = window.smartimagesearch_ajax.urls.proxy
 export const settingsApi = window.smartimagesearch_ajax.urls.settings
 export const nonce = window.smartimagesearch_ajax.nonce
 
-export const checkApiKey = async (apiKey) =>
-  fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, { method: "POST" })
+export const checkApi = async (apiKey, apiEndpoint) =>
+  fetch(apiEndpoint + "/vision/v3.1/describe", {
+    method: "POST",
+    headers: {
+      "Ocp-Apim-Subscription-Key": apiKey
+    }
+  })
     .then((response) => response.json())
     .then((data) => {
       if (!data.error) {

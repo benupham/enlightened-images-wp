@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { Accordion } from "./Accordion"
-import { checkApiKey } from "./api"
+import { checkApi } from "./api"
 import { Dashboard } from "./Dashboard"
 import "./settings.css"
 import { Sidebar } from "./Sidebar"
@@ -9,6 +9,7 @@ import { nonce, urls } from "./api"
 const Settings = ({ setNotice, estimate, count }) => {
   const [options, setOptions] = useState({
     apiKey: "",
+    apiEndpoint: "",
     proApiKey: "",
     onUpload: "async",
     isPro: null,
@@ -41,20 +42,28 @@ const Settings = ({ setNotice, estimate, count }) => {
     setOptions(json.options)
     console.log(json)
 
-    // check if Google API key is valid
-    if (options.proApiKey.length === 0) {
+    // check if Azure API key is valid
+    if (
+      options.proApiKey.length === 0 &&
+      options.apiEndpoint.length > 0 &&
+      options.apiKey.length > 0
+    ) {
       try {
-        let data = await checkApiKey(options.apiKey)
+        console.log("checking azure")
+        let data = await checkApi(options.apiKey, options.apiEndpoint)
         console.log(data)
 
-        setNotice(["API key saved and validated with Google API!", "success"])
+        setNotice(["API key and endpoint saved and validated with Azure API!", "success"])
       } catch (error) {
+        let endpointError = ""
+        if (error.message === "Failed to fetch") endpointError = ": Azure endpoint incorrect."
         setNotice([
-          `Google has a problem with your API key: ${error.message} Please check your Google account, this is not a problem with this plugin.`,
+          `There was a problem validating with Azure: ${error.message}${endpointError} Please check your Azure account, this is not a problem with this plugin.`,
           "error"
         ])
       }
-    } else if (json.options.isPro !== options.isPro) {
+    }
+    if (json.options.isPro !== options.isPro) {
       if (json.options.isPro === 0) {
         setNotice(["EnlightenedImages API key is invalid. Please check your account.", "error"])
       } else {
@@ -111,7 +120,7 @@ const Settings = ({ setNotice, estimate, count }) => {
           <form onSubmit={updateOptions}>
             {options.isPro === 0 && (
               <div>
-                <h2>Enter your EnlightenedImages API key or Google API key</h2>
+                <h2>Enter your EnlightenedImages API key</h2>
               </div>
             )}
             <table className="sisa-options-table form-table">
@@ -141,29 +150,67 @@ const Settings = ({ setNotice, estimate, count }) => {
                   </td>
                 </tr>
                 {options.isPro === 0 && (
-                  <tr>
-                    <th scope="row">
-                      Google Cloud Vision <br />
-                      API Key
-                    </th>
-                    <td>
-                      <input
-                        name="apiKey"
-                        type="text"
-                        value={options.apiKey}
-                        onChange={handleInputChange}
-                        placeholder={isGetting ? "Loading..." : "Enter key"}
-                      />
-                      <p>
-                        <a
-                          href="https://cloud.google.com/vision/docs/setup"
-                          target="_blank"
-                          rel="noopener noreferrer">
-                          Get your Google Cloud Vision API key here.
-                        </a>
-                      </p>
-                    </td>
-                  </tr>
+                  <>
+                    <tr>
+                      <th colSpan={2}>
+                        <h2>Or enter your Microsoft Azure Computer Vision account details</h2>
+                        <p>
+                          If you want to use your own Microsoft Azure account, you will need an
+                          Azure Computer Vision API key and endpoint. You can learn how to get these
+                          by going to the{" "}
+                          <a
+                            href="https://azure.microsoft.com/en-us/services/cognitive-services/computer-vision/#overview"
+                            target="_blank"
+                            rel="noopener noreferrer">
+                            Azure Computer Vision website
+                          </a>
+                          . The correct endpoint will look something like
+                          <code>
+                            https://[your-custom-azure-domain].cognitiveservices.azure.com
+                          </code>
+                          . Do not include the final backslash on the URL.
+                        </p>
+                        <p>
+                          As with all Microsoft services, it is a nightmare to set up, which is why
+                          we offer the paid service. Good luck!
+                        </p>
+                      </th>
+                    </tr>
+                    <tr>
+                      <th scope="row">
+                        Azure Computer Vision <br />
+                        API Key
+                      </th>
+                      <td>
+                        <input
+                          name="apiKey"
+                          type="text"
+                          value={options.apiKey}
+                          onChange={handleInputChange}
+                          placeholder={isGetting ? "Loading..." : "Enter key"}
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">
+                        Azure Computer Vision <br />
+                        Endpoint
+                      </th>
+                      <td>
+                        <input
+                          name="apiEndpoint"
+                          type="url"
+                          value={options.apiEndpoint}
+                          onChange={handleInputChange}
+                          placeholder={
+                            isGetting
+                              ? "Loading..."
+                              : "https://[some endpoint].cognitiveservices.azure.com/"
+                          }
+                        />
+                      </td>
+                    </tr>
+                  </>
                 )}
                 {options.hasPro === 1 && (
                   <>

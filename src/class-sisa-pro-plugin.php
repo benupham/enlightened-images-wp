@@ -36,9 +36,9 @@ class SisaPro
     public function set_client()
     {
         if ($this->is_pro) {
-            $this->gcv_client = new SmartImageSearch_SisaPro_Client();
+            $this->image_client = new SmartImageSearch_SisaPro_Client();
         } else {
-            $this->gcv_client = new SmartImageSearch_GCV_Client();
+            $this->image_client = new SmartImageSearch_Azure_Client();
         }
     }
 
@@ -376,13 +376,13 @@ class SisaPro
         $image = $this->get_image_url($p);
 
         if ($image === false) {
-            $annotation_data['error'] = new WP_Error('bad_image', 'Image filepath not found');
+            $annotation_data['error'] = new WP_Error('bad_image', __('Image filepath not found'));
             return $annotation_data;
         }
 
         $annotation_options = $this->get_annotation_options();
         $features = $this->get_annotation_features($annotation_options);
-        $gcv_result = $this->gcv_client->get_annotation($image, implode(',', $features));
+        $gcv_result = $this->image_client->get_annotation($image, implode(',', $features));
 
         if (is_wp_error($gcv_result)) {
             // error_log(print_r($gcv_result, true));
@@ -462,36 +462,31 @@ class SisaPro
     {
         $cleaned_data = array();
         $annotation_options = $this->get_annotation_options();
-        $min_score = 0.6;
-
-        if (1 === $annotation_options['sisa_landmarks']) {
-            $cleaned_data['sisa_landmarks'] = '';
-
-            if (isset($data->landmarkAnnotations) && !empty($data->landmarkAnnotations)) {
-                if ($data->landmarkAnnotations[0]->score >= $min_score) {
-                    $cleaned_data['sisa_landmarks'] = $data->landmarkAnnotations[0]->description;
-                }
-            }
-        }
-
-        if (1 === $annotation_options['sisa_labels']) {
-            $cleaned_data['sisa_labels'] = '';
-
-            if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
-                $labels = array();
-                foreach ($data->labelAnnotations as $label) {
-                    if ($label->score >= $min_score) {
-                        $labels[] = strtolower($label->description);
-                    }
-                }
-                $cleaned_data['sisa_labels'] = array_values(array_unique($labels));
-            }
-        }
+        $min_score = 0.5;
+        $labels_min_score = 0.7;
 
         if (1 === (int) get_option('sisa_alt_text')) {
             $cleaned_data['sisa_web_entities'] = '';
             $cleaned_data['sisa_web_labels'] = '';
             $cleaned_data['sisa_objects'] =  '';
+            $cleaned_data['sisa_labels'] = '';
+
+            if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
+                $labels = array();
+                foreach ($data->labelAnnotations as $label) {
+                    if (($label->score >= $labels_min_score)) {
+                        $labels[] = strtolower($label->description);
+                    }
+                }
+                if (in_array('person', $labels)) {
+                    $counts = array_count_values($labels);
+                    if (2 <= $counts['person']) {
+                        array_unshift($labels, 'people');
+                    }
+                    $labels = array_diff($labels, $this->unnecessary_words);
+                }
+                $cleaned_data['sisa_labels'] = array_values(array_unique($labels));
+            }
 
             if (isset($data->webDetection) && !empty($data->webDetection)) {
                 $web_entities = array();
@@ -519,6 +514,13 @@ class SisaPro
                         $objects[] = strtolower($object->name);
                     }
                 }
+                if (in_array('person', $objects)) {
+                    $counts = array_count_values($objects);
+                    if (2 <= $counts['person']) {
+                        array_unshift($objects, 'people');
+                    }
+                    $objects = array_diff($objects, $this->unnecessary_words);
+                }
                 $cleaned_data['sisa_objects'] =  array_values(array_unique($objects));
             }
         }
@@ -537,6 +539,16 @@ class SisaPro
             }
         }
 
+        if (1 === $annotation_options['sisa_landmarks']) {
+            $cleaned_data['sisa_landmarks'] = '';
+
+            if (isset($data->landmarkAnnotations) && !empty($data->landmarkAnnotations)) {
+                if ($data->landmarkAnnotations[0]->score >= $min_score) {
+                    $cleaned_data['sisa_landmarks'] = $data->landmarkAnnotations[0]->description;
+                }
+            }
+        }
+
         if (1 === $annotation_options['sisa_text']) {
             $cleaned_data['sisa_text'] = '';
 
@@ -549,17 +561,55 @@ class SisaPro
         return $cleaned_data;
     }
 
+    public $unnecessary_words = [
+        'head',
+        'cheek',
+        'forehead',
+        'top',
+        'jaw',
+        'outerwear',
+        'dress shirt',
+        'beard',
+        'nose',
+        'sleeve',
+        'hair',
+        'glasses',
+        'tie',
+        'shirt',
+        'face ',
+        'eye',
+        'eyelash ',
+        'hat',
+        'shoulder',
+        'neck',
+        'eyebrow',
+        'clothing ',
+        'temple',
+        'long hair',
+        'nfl divisional round',
+    ];
+
     public function update_image_alt_text($cleaned_data, $p, $save_alt)
     {
         $success = true;
         $alt = '';
 
-        if (is_array($cleaned_data['sisa_web_labels']) && !empty($cleaned_data['sisa_web_labels'][0])) {
+        if (
+            is_array($cleaned_data['sisa_web_labels'])
+            && !empty($cleaned_data['sisa_web_labels'][0])
+            && 2 <= str_word_count($cleaned_data['sisa_web_labels'][0])
+        ) {
             $alt = $cleaned_data['sisa_web_labels'][0];
-        } elseif (is_array($cleaned_data['sisa_web_entities']) && !empty($cleaned_data['sisa_web_entities'][0])) {
+        } elseif (
+            is_array($cleaned_data['sisa_web_entities'])
+            && !empty($cleaned_data['sisa_web_entities'][0])
+            && 2 <= str_word_count($cleaned_data['sisa_web_entities'][0])
+        ) {
             $alt = $cleaned_data['sisa_web_entities'][0];
         } else {
-            $alt = $cleaned_data['sisa_objects'][0];
+            $labels = $cleaned_data['sisa_labels'] ? array_slice($cleaned_data['sisa_labels'], 0, 3) : array();
+            $objects = $cleaned_data['sisa_objects'] ? array_slice($cleaned_data['sisa_objects'], 0, 3) : array();
+            $alt = implode(', ', array_merge($objects, $labels));
         }
 
         // Simply return the existing and new alt text, without changing the alt text

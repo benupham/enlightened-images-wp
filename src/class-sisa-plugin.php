@@ -37,9 +37,9 @@ class Sisa
     public function set_client()
     {
         if ($this->is_pro) {
-            $this->gcv_client = new SmartImageSearch_SisaPro_Client();
+            $this->image_client = new SmartImageSearch_SisaPro_Client();
         } else {
-            $this->gcv_client = new SmartImageSearch_GCV_Client();
+            $this->image_client = new SmartImageSearch_Azure_Client();
         }
     }
 
@@ -47,8 +47,6 @@ class Sisa
     {
 
         add_action('rest_api_init', $this->get_method('add_sisa_api_routes'));
-
-        add_filter('wp_generate_attachment_metadata', $this->get_method('process_attachment_upload'), 10, 2);
     }
 
     public function ajax_init()
@@ -125,6 +123,7 @@ class Sisa
             'success' => true,
             'options' => array(
                 'apiKey' => get_option('sisa_api_key', ''),
+                'apiEndpoint' => get_option('sisa_azure_endpoint', ''),
                 'proApiKey' => get_option('sisa_pro_api_key') ?: '',
                 'isPro' => (int) get_option('sisa_pro', (int) 0),
                 'hasPro' => (int) get_option('sisa_pro_plugin', (int) 0),
@@ -147,6 +146,7 @@ class Sisa
     {
         $json = $request->get_json_params();
         update_option('sisa_api_key', sanitize_text_field(($json['options']['apiKey'])));
+        update_option('sisa_azure_endpoint', sanitize_text_field(($json['options']['apiEndpoint'])));
         update_option('sisa_pro_api_key', sanitize_text_field(($json['options']['proApiKey'])));
         update_option('sisa_on_media_upload', sanitize_text_field(($json['options']['onUpload'])));
         update_option('sisa_alt_text', (int) sanitize_text_field(($json['options']['altText'])));
@@ -156,7 +156,7 @@ class Sisa
         update_option('sisa_landmarks', (int) sanitize_text_field(($json['options']['landmarks'])));
 
         $sisa_pro = $this->get_account_status(sanitize_text_field(($json['options']['proApiKey'])));
-        error_log(print_r($sisa_pro, true));
+        // error_log(print_r($sisa_pro, true));
         if (isset($sisa_pro->data)) {
             update_option('sisa_pro', (int) 1);
             $this->is_pro = true;
@@ -171,6 +171,7 @@ class Sisa
             'success' => true,
             'options' => array(
                 'apiKey' => $json['options']['apiKey'],
+                'apiEndpoint' => $json['options']['apiEndpoint'],
                 'proApiKey' => $json['options']['proApiKey'],
                 'isPro' => (int) get_option('sisa_pro'),
                 'hasPro' => (int) get_option('sisa_pro_plugin', (int) 1),
@@ -279,34 +280,39 @@ class Sisa
                     $image = wp_get_original_image_url($p);
                 }
             } else {
-                $image = $this->get_filepath($p);
+                $image = wp_get_attachment_image_url($p);
             }
 
             if ($image === false) {
-                $response[] = new WP_Error('bad_image', 'Image filepath not found');
+                $response[] = new WP_Error('bad_image', __('Image filepath not found'));
                 continue;
             }
 
-            $gcv_result = $this->gcv_client->get_annotation($image);
+            // $gcv_result = $this->gcv_client->get_annotation($image);
+            // $azure_client = new SmartImageSearch_Azure_Client();
+            $image_response = $this->image_client->get_annotation($image);
 
-            if (is_wp_error($gcv_result)) {
+            if (is_wp_error($image_response)) {
                 ++$errors;
-                $annotation_data['error'] = $gcv_result;
+                $annotation_data['error'] = $image_response;
                 $response[] = $annotation_data;
+                // error_log('this was an error');
                 continue;
             }
 
-            $cleaned_data = $this->clean_up_gcv_data($gcv_result);
-            $alt = $this->update_image_alt_text($cleaned_data, $p, true);
+            // $cleaned_data = $this->clean_up_gcv_data($image_response);
+            // error_log(print_r($cleaned_data, true));
+            // $alt = $this->update_image_alt_text($cleaned_data, $p, true);
+            $alt_text = $this->update_image_alt_text_az($image_response, $p);
 
-            if (is_wp_error($alt)) {
+            if (is_wp_error($alt_text)) {
                 ++$errors;
             }
 
-            $annotation_data['alt_text'] = $alt;
+            $annotation_data['alt_text'] = $alt_text;
 
             if ($this->is_pro) {
-                $this->credits = $gcv_result->credits;
+                $this->credits = $image_response->credits;
             }
 
             $response[] = $annotation_data;
@@ -327,46 +333,31 @@ class Sisa
         return $response;
     }
 
-    public function get_filepath($p)
+    public function update_image_alt_text_az($image_response, $p)
     {
-        $wp_metadata = wp_get_attachment_metadata($p);
-        if (!is_array($wp_metadata) || !isset($wp_metadata['file'])) {
-            return false;
-        }
-        $upload_dir = wp_upload_dir();
-        $path_prefix = $upload_dir['basedir'] . '/';
-        $path_info = pathinfo($wp_metadata['file']);
-        if (isset($path_info['dirname'])) {
-            $path_prefix .= $path_info['dirname'] . '/';
+        $caption = $image_response->captions[0]->text;
+
+        $success = update_post_meta($p, '_wp_attachment_image_alt', $caption);
+
+        if (false === $success) {
+            return new WP_Error(500, 'Failed to update alt text for unknown reason.', array('existing' => '', 'smartimage' => $caption));
         }
 
-        /* Do not use pathinfo for getting the filename.
-        It doesn't work when the filename starts with a special character. */
-        $path_parts = explode('/', $wp_metadata['file']);
-        $name = end($path_parts);
-        $filename = $path_prefix . $name;
-        return $filename;
+        return array('existing' => '', 'smartimage' => $caption);
     }
 
     public function clean_up_gcv_data($data)
     {
         $cleaned_data = array();
         $min_score = 0.6;
+        $labels_min_score = 0.7;
 
         if (isset($data->landmarkAnnotations) && !empty($data->landmarkAnnotations)) {
             if ($data->landmarkAnnotations[0]->score >= $min_score) {
                 $cleaned_data['sisa_landmarks'] = $data->landmarkAnnotations[0]->description;
             }
         }
-        if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
-            $labels = array();
-            foreach ($data->labelAnnotations as $label) {
-                if ($label->score >= $min_score) {
-                    $labels[] = strtolower($label->description);
-                }
-            }
-            $cleaned_data['sisa_labels'] = array_values(array_unique($labels));
-        }
+
         if (isset($data->webDetection) && !empty($data->webDetection)) {
             $web_entities = array();
             foreach ($data->webDetection->webEntities as $entity) {
@@ -384,6 +375,7 @@ class Sisa
                 $cleaned_data['sisa_web_labels'] = array_values(array_unique($web_labels));
             }
         }
+
         if (isset($data->localizedObjectAnnotations) && !empty($data->localizedObjectAnnotations)) {
             $objects = array();
             foreach ($data->localizedObjectAnnotations as $object) {
@@ -391,8 +383,37 @@ class Sisa
                     $objects[] = strtolower($object->name);
                 }
             }
+
+            if (in_array('person', $objects)) {
+                $counts = array_count_values($objects);
+                if (2 <= $counts['person']) {
+                    array_unshift($objects, 'people');
+                }
+                $objects = array_diff($objects, $this->unnecessary_words);
+            }
+
             $cleaned_data['sisa_objects'] =  array_values(array_unique($objects));
         }
+
+        if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
+            $labels = array();
+            foreach ($data->labelAnnotations as $label) {
+                if ($label->score >= $labels_min_score) {
+                    $labels[] = strtolower($label->description);
+                }
+            }
+
+            if (in_array('person', $labels) || ($cleaned_data['sisa_objects'] && in_array('person', $cleaned_data['sisa_objects']))) {
+                $counts = array_count_values($labels);
+                if (2 <= $counts['person']) {
+                    array_unshift($labels, 'people');
+                }
+                $labels = array_diff($labels, $this->unnecessary_words);
+            }
+
+            $cleaned_data['sisa_labels'] = array_values(array_unique($labels));
+        }
+
         if (isset($data->logoAnnotations) && !empty($data->logoAnnotations)) {
             $logos = array();
             foreach ($data->logoAnnotations as $logo) {
@@ -409,17 +430,60 @@ class Sisa
         return $cleaned_data;
     }
 
+    public $unnecessary_words = [
+        'head',
+        'cheek',
+        'forehead',
+        'top',
+        'jaw',
+        'outerwear',
+        'dress shirt',
+        'beard',
+        'nose',
+        'sleeve',
+        'hair',
+        'glasses',
+        'tie',
+        'shirt',
+        'face ',
+        'eye',
+        'eyelash ',
+        'hat',
+        'shoulder',
+        'neck',
+        'eyebrow',
+        'clothing',
+        'temple',
+        'long hair',
+        'nfl divisional round',
+    ];
+
     public function update_image_alt_text($cleaned_data, $p, $save_alt)
     {
         $success = true;
         $alt = '';
+        $site_name = strtolower(get_bloginfo('name'));
 
-        if (is_array($cleaned_data['sisa_web_labels']) && !empty($cleaned_data['sisa_web_labels'][0])) {
+        if (
+            is_array($cleaned_data['sisa_web_labels'])
+            && !empty($cleaned_data['sisa_web_labels'][0])
+            && 2 <= str_word_count(
+                $cleaned_data['sisa_web_labels'][0]
+                    && ($cleaned_data['sisa_web_labels'][0] != $site_name)
+            )
+        ) {
             $alt = $cleaned_data['sisa_web_labels'][0];
-        } elseif (is_array($cleaned_data['sisa_web_entities']) && !empty($cleaned_data['sisa_web_entities'][0])) {
+        } elseif (
+            is_array($cleaned_data['sisa_web_entities'])
+            && !empty($cleaned_data['sisa_web_entities'][0])
+            && 2 <= str_word_count($cleaned_data['sisa_web_entities'][0])
+            && ($cleaned_data['sisa_web_entities'][0] != $site_name)
+        ) {
             $alt = $cleaned_data['sisa_web_entities'][0];
         } else {
-            $alt = $cleaned_data['sisa_objects'][0];
+            $labels = $cleaned_data['sisa_labels'] ? array_slice($cleaned_data['sisa_labels'], 0, 3) : array();
+            $objects = $cleaned_data['sisa_objects'] ? array_slice($cleaned_data['sisa_objects'], 0, 3) : array();
+            $alt = implode(', ', array_merge($objects, $labels));
         }
 
         if (!empty($existing = get_post_meta($p, '_wp_attachment_image_alt', true))) {
