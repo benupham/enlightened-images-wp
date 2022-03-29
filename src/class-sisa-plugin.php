@@ -37,9 +37,9 @@ class Sisa
     public function set_client()
     {
         if ($this->is_pro) {
-            $this->image_client = new SmartImageSearch_SisaPro_Client();
+            $this->image_client = new Sisa_Pro_Client();
         } else {
-            $this->image_client = new SmartImageSearch_Azure_Client();
+            $this->image_client = new Sisa_Azure_Client();
         }
     }
 
@@ -74,9 +74,9 @@ class Sisa
     public function add_sisa_plugin_links($current_links)
     {
         $additional = array(
-            'smartimagesearch' => sprintf(
-                '<a href="upload.php?page=smartimagesearch">%s</a>',
-                esc_html__('Get Started', 'smartimagesearch')
+            'enlightenedimages' => sprintf(
+                '<a href="upload.php?page=enlightenedimages">%s</a>',
+                esc_html__('Get Started', 'enlightenedimages')
             ),
         );
         return array_merge($additional, $current_links);
@@ -84,17 +84,17 @@ class Sisa
 
     public function add_sisa_api_routes()
     {
-        register_rest_route('smartimagesearch/v1', '/proxy', array(
+        register_rest_route('enlightenedimages/v1', '/proxy', array(
             'methods' => WP_REST_Server::READABLE,
             'callback' => $this->get_method('api_bulk_sisa'),
             'permission_callback' => $this->get_method('sisa_permissions_check'),
         ));
-        register_rest_route('smartimagesearch/v1', '/settings', array(
+        register_rest_route('enlightenedimages/v1', '/settings', array(
             'methods' => WP_REST_Server::READABLE,
             'callback' => $this->get_method('api_get_sisa_settings'),
             'permission_callback' => $this->get_method('sisa_permissions_check'),
         ));
-        register_rest_route('smartimagesearch/v1', '/settings', array(
+        register_rest_route('enlightenedimages/v1', '/settings', array(
             'methods' => WP_REST_Server::CREATABLE,
             'callback' => $this->get_method('api_update_sisa_settings'),
             'permission_callback' => $this->get_method('sisa_permissions_check'),
@@ -267,6 +267,7 @@ class Sisa
 
             $annotation_data['thumbnail'] = wp_get_attachment_image_url($p);
             $annotation_data['attachmentURL'] = '/wp-admin/upload.php?item=' . $p;
+            $annotation_data['id'] = (int) $p;
 
             $attachment = get_post($p);
             $annotation_data['file'] = $attachment->post_name;
@@ -288,8 +289,6 @@ class Sisa
                 continue;
             }
 
-            // $gcv_result = $this->gcv_client->get_annotation($image);
-            // $azure_client = new SmartImageSearch_Azure_Client();
             $image_response = $this->image_client->get_annotation($image);
 
             if (is_wp_error($image_response)) {
@@ -300,9 +299,6 @@ class Sisa
                 continue;
             }
 
-            // $cleaned_data = $this->clean_up_gcv_data($image_response);
-            // error_log(print_r($cleaned_data, true));
-            // $alt = $this->update_image_alt_text($cleaned_data, $p, true);
             $alt_text = $this->update_image_alt_text_az($image_response, $p);
 
             if (is_wp_error($alt_text)) {
@@ -521,15 +517,15 @@ class Sisa
                 $js_to_load = plugin_dir_url(__FILE__) . '/react-frontend/build' . $main_js;
 
                 $css_to_load = plugin_dir_url(__FILE__) . '/react-frontend/build' . $main_css;
-                wp_enqueue_style('smartimagesearch_styles', $css_to_load);
+                wp_enqueue_style('enlightenedimages_styles', $css_to_load);
             }
         }
 
-        wp_enqueue_script('smartimagesearch_react', $js_to_load, '', mt_rand(10, 1000), true);
-        wp_localize_script('smartimagesearch_react', 'smartimagesearch_ajax', array(
+        wp_enqueue_script('enlightenedimages_react', $js_to_load, '', mt_rand(10, 1000), true);
+        wp_localize_script('enlightenedimages_react', 'enlightenedimages_ajax', array(
             'urls' => array(
-                'proxy' => rest_url('smartimagesearch/v1/proxy'),
-                'settings' => rest_url('smartimagesearch/v1/settings'),
+                'proxy' => rest_url('enlightenedimages/v1/proxy'),
+                'settings' => rest_url('enlightenedimages/v1/settings'),
                 'media' => rest_url('wp/v2/media'),
             ),
             'nonce' => wp_create_nonce('wp_rest'),
@@ -543,12 +539,12 @@ class Sisa
             __('Bulk Image Alt Text'),
             esc_html__('Bulk Alt Text'),
             'manage_options',
-            'smartimagesearch',
-            array($this, 'smartimagesearch_settings_do_page')
+            'enlightenedimages',
+            array($this, 'enlightenedimages_settings_do_page')
         );
     }
 
-    public function smartimagesearch_settings_do_page()
+    public function enlightenedimages_settings_do_page()
     {
 ?>
         <div id="sisa-dashboard"></div>
@@ -593,6 +589,6 @@ class Sisa
             return true;
         }
 
-        return new WP_Error('rest_forbidden', esc_html__('You do not have permissions to do that.', 'smartimagesearch'), array('status' => 401));
+        return new WP_Error('rest_forbidden', esc_html__('You do not have permissions to do that.', 'enlightenedimages'), array('status' => 401));
     }
 }

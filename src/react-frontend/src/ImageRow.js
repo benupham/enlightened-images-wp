@@ -50,7 +50,7 @@ export const ImageRow = ({ image, setImages }) => {
           {image.file}
         </a>
       </td>
-      <td className="alt-text">
+      <td className={`alt-text ${status}`}>
         {image.alt_text?.smartimage && (
           <ContentEditable
             className="editable"
@@ -66,8 +66,9 @@ export const ImageRow = ({ image, setImages }) => {
               <span className="existing-alt-text">current: {image.alt_text?.existing}</span>
             </>
           )}
+        {image.error && metaData}
       </td>
-      <td className={`sisa-meta ${status}`}>{metaData}</td>
+      {/* <td className={`sisa-meta ${status}`}>{metaData}</td> */}
       <td className={`status ${status}`}>{status}</td>
     </tr>
   )

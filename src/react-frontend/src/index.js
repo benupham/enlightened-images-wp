@@ -35,12 +35,12 @@ const App = (props) => {
     getEstimate()
   }, [])
 
-  // if (process.env.NODE_ENV === "production") console.log = function no_console() {}
+  if (process.env.NODE_ENV === "production") console.log = function no_console() {}
 
   return (
     <>
       <h1>
-        <span className="enlightened">EnlightenedImages</span> Alt Text and AI Image Annotation
+        <span className="enlightened">EnlightenedImages</span> Image Alt Text Generator
       </h1>
       <div className="wrap sisa">
         {notice.length > 0 && <Notice notice={notice} />}

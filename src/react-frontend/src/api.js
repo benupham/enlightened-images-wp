@@ -1,8 +1,8 @@
-export const urls = window.smartimagesearch_ajax.urls
-export const mediaApi = window.smartimagesearch_ajax.urls.media
-export const proxyApi = window.smartimagesearch_ajax.urls.proxy
-export const settingsApi = window.smartimagesearch_ajax.urls.settings
-export const nonce = window.smartimagesearch_ajax.nonce
+export const urls = window.enlightenedimages_ajax.urls
+export const mediaApi = window.enlightenedimages_ajax.urls.media
+export const proxyApi = window.enlightenedimages_ajax.urls.proxy
+export const settingsApi = window.enlightenedimages_ajax.urls.settings
+export const nonce = window.enlightenedimages_ajax.nonce
 
 export const checkApi = async (apiKey, apiEndpoint) =>
   fetch(apiEndpoint + "/vision/v3.1/describe", {

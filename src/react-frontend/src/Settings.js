@@ -120,7 +120,11 @@ const Settings = ({ setNotice, estimate, count }) => {
           <form onSubmit={updateOptions}>
             {options.isPro === 0 && (
               <div>
-                <h2>Enter your EnlightenedImages API key</h2>
+                <h2>Setup A: Enter your EnlightenedImages API key</h2>
+                <p>
+                  Purchase an EnlightenedImages API key on the EnlightenedImages website, then paste
+                  the key here and get started immediately.
+                </p>
               </div>
             )}
             <table className="sisa-options-table form-table">
@@ -153,11 +157,11 @@ const Settings = ({ setNotice, estimate, count }) => {
                   <>
                     <tr>
                       <th colSpan={2}>
-                        <h2>Or enter your Microsoft Azure Computer Vision account details</h2>
+                        <h2>Setup B: Enter your Microsoft Azure Computer Vision account details</h2>
                         <p>
-                          If you want to use your own Microsoft Azure account, you will need an
-                          Azure Computer Vision API key and endpoint. You can learn how to get these
-                          by going to the{" "}
+                          If you want to use your own Microsoft Azure account instead of purchasing
+                          an EnlightenedImages key, you will need an Azure Computer Vision API key
+                          and endpoint. You can learn how to get these by going to the{" "}
                           <a
                             href="https://azure.microsoft.com/en-us/services/cognitive-services/computer-vision/#overview"
                             target="_blank"
@@ -272,7 +276,7 @@ const Settings = ({ setNotice, estimate, count }) => {
                         </p>
                       </td>
                     </tr>
-                    <tr>
+                    {/* <tr>
                       <th scope="row">Annotation Features</th>
                       <td>
                         <h4>Select the image analyzation features you want to perform.</h4>
@@ -352,7 +356,7 @@ const Settings = ({ setNotice, estimate, count }) => {
                           </span>
                         </p>
                       </td>
-                    </tr>
+                    </tr> */}
                   </>
                 )}
               </tbody>

@@ -1,6 +1,6 @@
 <?php
 
-class SmartImageSearch_SisaPro_Client
+class Sisa_Pro_Client
 {
 
   public function get_annotation($file_path, $features = 'CAPTION')

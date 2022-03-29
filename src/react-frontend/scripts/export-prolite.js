@@ -2,8 +2,10 @@ const fs = require("fs")
 const archiver = require("archiver")
 const path = require("path")
 
-const prefix = "enlightened-images" // folder name
-const output = fs.createWriteStream(path.resolve(__dirname, "../../../../enlightened-images.zip"))
+const prefix = "enlightened-images-pro" // folder name
+const output = fs.createWriteStream(
+  path.resolve(__dirname, "../../../../enlightened-images-pro.zip")
+)
 const archive = archiver("zip", { zlib: { level: 9 } }) // Sets the compression level.
 
 // listen for all archive data to be written
@@ -38,23 +40,10 @@ archive.on("error", function (err) {
 // pipe archive data to the file
 archive.pipe(output)
 
-archive.glob("../../src/react-frontend/build/static/js/main.*.js", null)
-archive.glob("../../src/react-frontend/build/static/js/main.*.js.map", null)
-archive.glob("../../src/react-frontend/build/static/css/main.*.css", null)
-archive.glob("../../src/class-azure-client.php")
-archive.glob("../../src/class-pro-client.php")
-archive.glob("../../src/class-sisa-plugin.php")
-archive.file(path.resolve(__dirname, "../../../enlightened-images.php"), {
-  name: "enlightened-images.php"
+archive.glob("../../src/class-sisa-pro-plugin.php")
+archive.file(path.resolve(__dirname, "../../../enlightened-images-pro.php"), {
+  name: "enlightened-images-pro.php"
 })
-archive.file(path.resolve(__dirname, "../../../uninstall.php"), {
-  name: "uninstall.php"
-})
-archive.file(path.resolve(__dirname, "../build/asset-manifest.json"), {
-  name: "../src/react-frontend/build/asset-manifest.json"
-})
-archive.file(path.resolve(__dirname, "../../../README.txt"), { name: "README.txt" })
-archive.file(path.resolve(__dirname, "../../../LICENSE.txt"), { name: "LICENSE.txt" })
 
 // finalize the archive (ie we are done appending files but streams have to finish yet)
 // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand

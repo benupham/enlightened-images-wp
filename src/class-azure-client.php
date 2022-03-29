@@ -1,6 +1,6 @@
 <?php
 
-class SmartImageSearch_Azure_Client
+class Sisa_Azure_Client
 {
 
     public function get_annotation($original_file)

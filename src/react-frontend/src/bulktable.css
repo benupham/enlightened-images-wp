@@ -23,7 +23,7 @@
   width: auto;
 }
 .bulk-table .alt-text {
-  width: 15%;
+  width: 25%;
 }
 .editable {
   padding: 3px;
@@ -57,7 +57,7 @@
 }
 .bulk-table td.filename {
   color: #8c8f94;
-  width: 15%;
+  width: 25%;
   max-width: 200px;
   overflow-wrap: break-word;
   text-overflow: ellipsis;

@@ -117,7 +117,7 @@ export const Dashboard = ({ options }) => {
   return (
     <div className={options.isPro === 0 || options.hasPro === 0 ? `bulk wrap` : `bulk`}>
       <h3>Total images remaining to analyze: {stats.remaining ? stats.remaining : "loading..."}</h3>
-      {(options.isPro === 1 || options.hasPro === 1) && (
+      {options.isPro === 1 && (
         <>
           <h4 className="credits">
             Credits Remaining: {stats.credits ? stats.credits : "loading..."}{" "}

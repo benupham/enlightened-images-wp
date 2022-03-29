@@ -24,8 +24,9 @@ export const Sidebar = ({ estimate, count, isPro, hasPro }) => {
         <div className="pro-plugin">
           <h3 className="title">Upgrade to the Pro Version</h3>
           <p>
-            Generate alt text on every image upload in the background, add text, logo, and landmark
-            recognition, and more.
+            Generate alt text on every image upload in the background and edit generated alt text
+            from the bulk tool, plus access to all future features. And get rid of this annoying
+            notice.
           </p>
           <span className="price">$5.99</span>
           <a
