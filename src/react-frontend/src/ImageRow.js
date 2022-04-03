@@ -68,7 +68,7 @@ export const ImageRow = ({ image, setImages }) => {
           )}
         {image.error && metaData}
       </td>
-      {/* <td className={`sisa-meta ${status}`}>{metaData}</td> */}
+      {/* <td className={`elim-meta ${status}`}>{metaData}</td> */}
       <td className={`status ${status}`}>{status}</td>
     </tr>
   )

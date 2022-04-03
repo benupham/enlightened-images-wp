@@ -40,7 +40,7 @@ archive.on("error", function (err) {
 // pipe archive data to the file
 archive.pipe(output)
 
-archive.glob("../../src/class-sisa-pro-plugin.php")
+archive.glob("../../src/class-elim-pro-plugin.php")
 archive.file(path.resolve(__dirname, "../../../enlightened-images-pro.php"), {
   name: "enlightened-images-pro.php"
 })

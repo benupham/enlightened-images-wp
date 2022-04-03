@@ -5,39 +5,39 @@
 .dashboard {
   width: 100%;
 }
-.sisa-options-table {
+.elim-options-table {
   border-collapse: collapse;
   text-align: left;
 }
-.sisa-options-table th {
+.elim-options-table th {
   vertical-align: top;
 }
-.sisa-options-table td {
+.elim-options-table td {
   vertical-align: top;
 }
-.sisa-options-table input[type="checkbox"],
-.sisa-options-table input[type="radio"] {
+.elim-options-table input[type="checkbox"],
+.elim-options-table input[type="radio"] {
   margin-right: 12px;
 }
 input[type="checkbox"] + label,
 input[type="radio"]:checked + label {
   font-weight: bold;
 }
-.sisa-options-table .description {
+.elim-options-table .description {
   display: block;
   font-size: 13px;
   color: gray;
   margin-left: 28px;
   margin-top: 4px;
 }
-.sisa-options-table td p {
+.elim-options-table td p {
   margin-bottom: 10px;
 }
 
-.sisa-options-table h4 {
+.elim-options-table h4 {
   margin-top: 5px;
 }
-.sisa-options-table th p {
+.elim-options-table th p {
   font-weight: normal;
 }
 .filler {

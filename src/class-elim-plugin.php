@@ -1,13 +1,13 @@
 <?php
 
-class Sisa
+class EnlightenedImages_Plugin
 {
     private static $instance = null;
 
     public static function getInstance()
     {
         if (self::$instance == null) {
-            self::$instance = new Sisa();
+            self::$instance = new EnlightenedImages_Plugin();
         }
 
         return self::$instance;
@@ -23,9 +23,9 @@ class Sisa
             add_action('admin_init', $this->get_method('ajax_init'));
         }
 
-        $this->is_pro = (int) get_option('sisa_pro') === 1 ? true : false;
+        $this->is_pro = (int) get_option('elim_pro') === 1 ? true : false;
         $this->has_pro = false;
-        update_option('sisa_pro_plugin', (int) 0);
+        update_option('elim_pro_plugin', (int) 0);
         $this->set_client();
     }
 
@@ -37,16 +37,16 @@ class Sisa
     public function set_client()
     {
         if ($this->is_pro) {
-            $this->image_client = new Sisa_Pro_Client();
+            $this->image_client = new EnlightenedImages_Pro_Client();
         } else {
-            $this->image_client = new Sisa_Azure_Client();
+            $this->image_client = new EnlightenedImages_Azure_Client();
         }
     }
 
     public function init()
     {
 
-        add_action('rest_api_init', $this->get_method('add_sisa_api_routes'));
+        add_action('rest_api_init', $this->get_method('add_elim_api_routes'));
     }
 
     public function ajax_init()
@@ -67,11 +67,11 @@ class Sisa
 
         add_filter(
             "plugin_action_links_$plugin",
-            $this->get_method('add_sisa_plugin_links')
+            $this->get_method('add_elim_plugin_links')
         );
     }
 
-    public function add_sisa_plugin_links($current_links)
+    public function add_elim_plugin_links($current_links)
     {
         $additional = array(
             'enlightenedimages' => sprintf(
@@ -82,22 +82,22 @@ class Sisa
         return array_merge($additional, $current_links);
     }
 
-    public function add_sisa_api_routes()
+    public function add_elim_api_routes()
     {
         register_rest_route('enlightenedimages/v1', '/proxy', array(
             'methods' => WP_REST_Server::READABLE,
-            'callback' => $this->get_method('api_bulk_sisa'),
-            'permission_callback' => $this->get_method('sisa_permissions_check'),
+            'callback' => $this->get_method('api_bulk_elim'),
+            'permission_callback' => $this->get_method('elim_permissions_check'),
         ));
         register_rest_route('enlightenedimages/v1', '/settings', array(
             'methods' => WP_REST_Server::READABLE,
-            'callback' => $this->get_method('api_get_sisa_settings'),
-            'permission_callback' => $this->get_method('sisa_permissions_check'),
+            'callback' => $this->get_method('api_get_elim_settings'),
+            'permission_callback' => $this->get_method('elim_permissions_check'),
         ));
         register_rest_route('enlightenedimages/v1', '/settings', array(
             'methods' => WP_REST_Server::CREATABLE,
-            'callback' => $this->get_method('api_update_sisa_settings'),
-            'permission_callback' => $this->get_method('sisa_permissions_check'),
+            'callback' => $this->get_method('api_update_elim_settings'),
+            'permission_callback' => $this->get_method('elim_permissions_check'),
         ));
     }
 
@@ -106,7 +106,7 @@ class Sisa
     public function get_credits()
     {
         if ($this->is_pro && !isset($this->credits)) {
-            $account = $this->get_account_status(get_option('sisa_pro_api_key'));
+            $account = $this->get_account_status(get_option('elim_pro_api_key'));
 
             if (isset($account->success)) {
                 $this->credits = (int) $account->data->credits;
@@ -116,23 +116,23 @@ class Sisa
         return $this->credits;
     }
 
-    public function api_get_sisa_settings($request)
+    public function api_get_elim_settings($request)
     {
 
         $response = new WP_REST_RESPONSE(array(
             'success' => true,
             'options' => array(
-                'apiKey' => get_option('sisa_api_key', ''),
-                'apiEndpoint' => get_option('sisa_azure_endpoint', ''),
-                'proApiKey' => get_option('sisa_pro_api_key') ?: '',
-                'isPro' => (int) get_option('sisa_pro', (int) 0),
-                'hasPro' => (int) get_option('sisa_pro_plugin', (int) 0),
-                'onUpload' => get_option('sisa_on_media_upload', 'async'),
-                'altText' => (int) get_option('sisa_alt_text', (int) 1),
-                'labels' => (int) get_option('sisa_labels', (int) 0),
-                'text' => (int) get_option('sisa_text', (int) 0),
-                'logos' => (int) get_option('sisa_logos', (int) 0),
-                'landmarks' => (int) get_option('sisa_landmarks', (int) 0),
+                'apiKey' => get_option('elim_api_key', ''),
+                'apiEndpoint' => get_option('elim_azure_endpoint', ''),
+                'proApiKey' => get_option('elim_pro_api_key') ?: '',
+                'isPro' => (int) get_option('elim_pro', (int) 0),
+                'hasPro' => (int) get_option('elim_pro_plugin', (int) 0),
+                'onUpload' => get_option('elim_on_media_upload', 'async'),
+                'altText' => (int) get_option('elim_alt_text', (int) 1),
+                'labels' => (int) get_option('elim_labels', (int) 0),
+                'text' => (int) get_option('elim_text', (int) 0),
+                'logos' => (int) get_option('elim_logos', (int) 0),
+                'landmarks' => (int) get_option('elim_landmarks', (int) 0),
                 'credits' => $this->get_credits(),
             ),
         ), 200);
@@ -142,27 +142,27 @@ class Sisa
         return $response;
     }
 
-    public function api_update_sisa_settings($request)
+    public function api_update_elim_settings($request)
     {
         $json = $request->get_json_params();
-        update_option('sisa_api_key', sanitize_text_field(($json['options']['apiKey'])));
-        update_option('sisa_azure_endpoint', sanitize_text_field(($json['options']['apiEndpoint'])));
-        update_option('sisa_pro_api_key', sanitize_text_field(($json['options']['proApiKey'])));
-        update_option('sisa_on_media_upload', sanitize_text_field(($json['options']['onUpload'])));
-        update_option('sisa_alt_text', (int) sanitize_text_field(($json['options']['altText'])));
-        update_option('sisa_labels', (int) sanitize_text_field(($json['options']['labels'])));
-        update_option('sisa_text', (int) sanitize_text_field(($json['options']['text'])));
-        update_option('sisa_logos', (int) sanitize_text_field(($json['options']['logos'])));
-        update_option('sisa_landmarks', (int) sanitize_text_field(($json['options']['landmarks'])));
+        update_option('elim_api_key', sanitize_text_field(($json['options']['apiKey'])));
+        update_option('elim_azure_endpoint', sanitize_text_field(($json['options']['apiEndpoint'])));
+        update_option('elim_pro_api_key', sanitize_text_field(($json['options']['proApiKey'])));
+        update_option('elim_on_media_upload', sanitize_text_field(($json['options']['onUpload'])));
+        update_option('elim_alt_text', (int) sanitize_text_field(($json['options']['altText'])));
+        update_option('elim_labels', (int) sanitize_text_field(($json['options']['labels'])));
+        update_option('elim_text', (int) sanitize_text_field(($json['options']['text'])));
+        update_option('elim_logos', (int) sanitize_text_field(($json['options']['logos'])));
+        update_option('elim_landmarks', (int) sanitize_text_field(($json['options']['landmarks'])));
 
-        $sisa_pro = $this->get_account_status(sanitize_text_field(($json['options']['proApiKey'])));
-        // error_log(print_r($sisa_pro, true));
-        if (isset($sisa_pro->data)) {
-            update_option('sisa_pro', (int) 1);
+        $elim_pro = $this->get_account_status(sanitize_text_field(($json['options']['proApiKey'])));
+        // error_log(print_r($elim_pro, true));
+        if (isset($elim_pro->data)) {
+            update_option('elim_pro', (int) 1);
             $this->is_pro = true;
             $this->set_client();
         } else {
-            update_option('sisa_pro', (int) 0);
+            update_option('elim_pro', (int) 0);
             $this->is_pro = false;
             $this->set_client();
         }
@@ -173,14 +173,14 @@ class Sisa
                 'apiKey' => $json['options']['apiKey'],
                 'apiEndpoint' => $json['options']['apiEndpoint'],
                 'proApiKey' => $json['options']['proApiKey'],
-                'isPro' => (int) get_option('sisa_pro'),
-                'hasPro' => (int) get_option('sisa_pro_plugin', (int) 1),
-                'onUpload' => get_option('sisa_on_media_upload', 'async'),
-                'altText' => (int) get_option('sisa_alt_text', (int) 1),
-                'labels' => (int) get_option('sisa_labels', (int) 0),
-                'text' => (int) get_option('sisa_text', (int) 0),
-                'logos' => (int) get_option('sisa_logos', (int) 0),
-                'landmarks' => (int) get_option('sisa_landmarks', (int) 0),
+                'isPro' => (int) get_option('elim_pro'),
+                'hasPro' => (int) get_option('elim_pro_plugin', (int) 1),
+                'onUpload' => get_option('elim_on_media_upload', 'async'),
+                'altText' => (int) get_option('elim_alt_text', (int) 1),
+                'labels' => (int) get_option('elim_labels', (int) 0),
+                'text' => (int) get_option('elim_text', (int) 0),
+                'logos' => (int) get_option('elim_logos', (int) 0),
+                'landmarks' => (int) get_option('elim_landmarks', (int) 0),
                 'credits' => $this->get_credits(),
             ),
         ), 200);
@@ -190,7 +190,7 @@ class Sisa
         return $response;
     }
 
-    public function api_bulk_sisa($request)
+    public function api_bulk_elim($request)
     {
 
         $params = $request->get_query_params();
@@ -272,16 +272,14 @@ class Sisa
             $attachment = get_post($p);
             $annotation_data['file'] = $attachment->post_name;
 
+            $image_metadata = wp_get_attachment_metadata($p);
+
             $image = null;
 
-            if ($this->is_pro) {
-                if (has_image_size('medium')) {
-                    $image = wp_get_attachment_image_url($p, 'medium');
-                } else {
-                    $image = wp_get_original_image_url($p);
-                }
+            if ($image_metadata['sizes']['medium']['width'] >= 50 && $image_metadata['sizes']['medium']['height'] >= 50) {
+                $image = wp_get_attachment_image_url($p, 'medium');
             } else {
-                $image = wp_get_attachment_image_url($p);
+                $image = wp_get_attachment_image_url($p, 'full');
             }
 
             if ($image === false) {
@@ -350,7 +348,7 @@ class Sisa
 
         if (isset($data->landmarkAnnotations) && !empty($data->landmarkAnnotations)) {
             if ($data->landmarkAnnotations[0]->score >= $min_score) {
-                $cleaned_data['sisa_landmarks'] = $data->landmarkAnnotations[0]->description;
+                $cleaned_data['elim_landmarks'] = $data->landmarkAnnotations[0]->description;
             }
         }
 
@@ -360,7 +358,7 @@ class Sisa
                 if (isset($entity->description) && $entity->score >= $min_score)
                     $web_entities[] = strtolower($entity->description);
             }
-            $cleaned_data['sisa_web_entities'] = array_values(array_unique($web_entities));
+            $cleaned_data['elim_web_entities'] = array_values(array_unique($web_entities));
             if (isset($data->webDetection->bestGuessLabels) && !empty($data->webDetection->bestGuessLabels)) {
                 $web_labels = array();
                 foreach ($data->webDetection->bestGuessLabels as $web_label) {
@@ -368,7 +366,7 @@ class Sisa
                         $web_labels[] = $web_label->label;
                     }
                 }
-                $cleaned_data['sisa_web_labels'] = array_values(array_unique($web_labels));
+                $cleaned_data['elim_web_labels'] = array_values(array_unique($web_labels));
             }
         }
 
@@ -388,7 +386,7 @@ class Sisa
                 $objects = array_diff($objects, $this->unnecessary_words);
             }
 
-            $cleaned_data['sisa_objects'] =  array_values(array_unique($objects));
+            $cleaned_data['elim_objects'] =  array_values(array_unique($objects));
         }
 
         if (isset($data->labelAnnotations) && !empty($data->labelAnnotations)) {
@@ -399,7 +397,7 @@ class Sisa
                 }
             }
 
-            if (in_array('person', $labels) || ($cleaned_data['sisa_objects'] && in_array('person', $cleaned_data['sisa_objects']))) {
+            if (in_array('person', $labels) || ($cleaned_data['elim_objects'] && in_array('person', $cleaned_data['elim_objects']))) {
                 $counts = array_count_values($labels);
                 if (2 <= $counts['person']) {
                     array_unshift($labels, 'people');
@@ -407,7 +405,7 @@ class Sisa
                 $labels = array_diff($labels, $this->unnecessary_words);
             }
 
-            $cleaned_data['sisa_labels'] = array_values(array_unique($labels));
+            $cleaned_data['elim_labels'] = array_values(array_unique($labels));
         }
 
         if (isset($data->logoAnnotations) && !empty($data->logoAnnotations)) {
@@ -417,11 +415,11 @@ class Sisa
                     $logos[] = $logo->description;
                 }
             }
-            $cleaned_data['sisa_logos'] = array_values(array_unique($logos));
+            $cleaned_data['elim_logos'] = array_values(array_unique($logos));
         }
         if (isset($data->textAnnotations) && !empty($data->textAnnotations)) {
             $text = $data->textAnnotations[0]->description;
-            $cleaned_data['sisa_text'] = $text;
+            $cleaned_data['elim_text'] = $text;
         }
         return $cleaned_data;
     }
@@ -461,24 +459,24 @@ class Sisa
         $site_name = strtolower(get_bloginfo('name'));
 
         if (
-            is_array($cleaned_data['sisa_web_labels'])
-            && !empty($cleaned_data['sisa_web_labels'][0])
+            is_array($cleaned_data['elim_web_labels'])
+            && !empty($cleaned_data['elim_web_labels'][0])
             && 2 <= str_word_count(
-                $cleaned_data['sisa_web_labels'][0]
-                    && ($cleaned_data['sisa_web_labels'][0] != $site_name)
+                $cleaned_data['elim_web_labels'][0]
+                    && ($cleaned_data['elim_web_labels'][0] != $site_name)
             )
         ) {
-            $alt = $cleaned_data['sisa_web_labels'][0];
+            $alt = $cleaned_data['elim_web_labels'][0];
         } elseif (
-            is_array($cleaned_data['sisa_web_entities'])
-            && !empty($cleaned_data['sisa_web_entities'][0])
-            && 2 <= str_word_count($cleaned_data['sisa_web_entities'][0])
-            && ($cleaned_data['sisa_web_entities'][0] != $site_name)
+            is_array($cleaned_data['elim_web_entities'])
+            && !empty($cleaned_data['elim_web_entities'][0])
+            && 2 <= str_word_count($cleaned_data['elim_web_entities'][0])
+            && ($cleaned_data['elim_web_entities'][0] != $site_name)
         ) {
-            $alt = $cleaned_data['sisa_web_entities'][0];
+            $alt = $cleaned_data['elim_web_entities'][0];
         } else {
-            $labels = $cleaned_data['sisa_labels'] ? array_slice($cleaned_data['sisa_labels'], 0, 3) : array();
-            $objects = $cleaned_data['sisa_objects'] ? array_slice($cleaned_data['sisa_objects'], 0, 3) : array();
+            $labels = $cleaned_data['elim_labels'] ? array_slice($cleaned_data['elim_labels'], 0, 3) : array();
+            $objects = $cleaned_data['elim_objects'] ? array_slice($cleaned_data['elim_objects'], 0, 3) : array();
             $alt = implode(', ', array_merge($objects, $labels));
         }
 
@@ -500,8 +498,8 @@ class Sisa
     {
 
         // only load scripts on dashboard and settings page
-        global $sisa_settings_page;
-        if ($hook != 'index.php' && $hook != $sisa_settings_page) {
+        global $elim_settings_page;
+        if ($hook != 'index.php' && $hook != $elim_settings_page) {
             return;
         }
 
@@ -534,8 +532,8 @@ class Sisa
 
     public function admin_menu()
     {
-        global $sisa_settings_page;
-        $sisa_settings_page = add_media_page(
+        global $elim_settings_page;
+        $elim_settings_page = add_media_page(
             __('Bulk Image Alt Text'),
             esc_html__('Bulk Alt Text'),
             'manage_options',
@@ -547,7 +545,7 @@ class Sisa
     public function enlightenedimages_settings_do_page()
     {
 ?>
-        <div id="sisa-dashboard"></div>
+        <div id="elim-dashboard"></div>
 <?php
     }
 
@@ -582,7 +580,7 @@ class Sisa
         return new WP_Error('estimate_unavailable', 'Could not generate Pro estimate');
     }
 
-    public function sisa_permissions_check()
+    public function elim_permissions_check()
     {
         // Restrict endpoint to only users who have the capability to manage options.
         if (current_user_can('manage_options')) {

@@ -13,7 +13,7 @@ export const BulkTable = ({ images, setImages }) => {
             Alt Text <br />
             <span>click on text to edit</span>
           </th>
-          {/* <th className="sisa-meta">Annotation Metadata</th> */}
+          {/* <th className="elim-meta">Annotation Metadata</th> */}
           <th className="status">Status</th>
         </tr>
       </thead>

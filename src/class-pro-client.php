@@ -1,6 +1,6 @@
 <?php
 
-class Sisa_Pro_Client
+class EnlightenedImages_Pro_Client
 {
 
   public function get_annotation($file_path, $features = 'CAPTION')
@@ -8,14 +8,14 @@ class Sisa_Pro_Client
     // error_log("using pro client");
 
     $baseurl = 'https://enlightenedimageswp.com/wp-json/smartimageserver/v1/proxy';
-    $apikey = get_option('sisa_pro_api_key');
+    $apikey = get_option('elim_pro_api_key');
 
     $request = wp_remote_get($baseurl . '?image=' . $file_path . '&api_key=' . $apikey . '&features=' . $features, array(
       'headers' => array('Content-Type' => 'application/json'),
       'method' => 'GET',
     ));
     /**
-     * DO SAFETY CHECK ON DATA COMING FROM THE SISA SERVER
+     * DO SAFETY CHECK ON DATA COMING FROM THE ELIM SERVER
      */
     if (is_wp_error($request)) {
       return $request;

@@ -15,7 +15,7 @@ class SmartImageSearch_GCV_Client
 
         $data = base64_encode($img);
         $baseurl = 'https://vision.googleapis.com/v1/images:annotate';
-        $apikey = get_option('sisa_api_key');
+        $apikey = get_option('elim_api_key');
         $body = array(
             'requests' => array(
                 array(

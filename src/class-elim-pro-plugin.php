@@ -1,12 +1,12 @@
 <?php
 
-class Sisa_ProLite
+class EnlightenedImages_ProLite
 {
-  protected $_sisa;
+  protected $_elim;
 
-  public function __construct(Sisa $instance)
+  public function __construct(EnlightenedImages_Plugin $instance)
   {
-    $this->_sisa = $instance;
+    $this->_elim = $instance;
 
     add_action('init', $this->get_method('init'));
 
@@ -15,22 +15,22 @@ class Sisa_ProLite
       add_action('admin_init', $this->get_method('ajax_init'));
     }
 
-    update_option('sisa_pro_plugin', (int) 1);
+    update_option('elim_pro_plugin', (int) 1);
   }
 
   public function __call($method, $args)
   {
-    return call_user_func_array(array($this->_sisa, $method), $args);
+    return call_user_func_array(array($this->_elim, $method), $args);
   }
 
   public function __get($key)
   {
-    return $this->_sisa->$key;
+    return $this->_elim->$key;
   }
 
   public function __set($key, $val)
   {
-    return $this->_sisa->$key = $val;
+    return $this->_elim->$key = $val;
   }
 
   protected function get_method($name)
@@ -47,14 +47,14 @@ class Sisa_ProLite
   public function ajax_init()
   {
     add_filter(
-      'wp_ajax_sisa_async_annotate_upload_new_media',
+      'wp_ajax_elim_async_annotate_upload_new_media',
       $this->get_method('ajax_annotate_on_upload')
     );
   }
 
   public function process_attachment_upload($metadata, $attachment_id)
   {
-    $annotate_upload = get_option('sisa_on_media_upload', 'async');
+    $annotate_upload = get_option('elim_on_media_upload', 'async');
     if ($annotate_upload == 'async') {
       $this->async_annotate($metadata, $attachment_id);
     } elseif ($annotate_upload == 'blocking') {
@@ -73,8 +73,8 @@ class Sisa_ProLite
   public function async_annotate($metadata, $attachment_id)
   {
     $context     = 'wp';
-    $action      = 'sisa_async_annotate_upload_new_media';
-    $_ajax_nonce = wp_create_nonce('sisa_new_media-' . $attachment_id);
+    $action      = 'elim_async_annotate_upload_new_media';
+    $_ajax_nonce = wp_create_nonce('elim_new_media-' . $attachment_id);
     $body = compact('action', '_ajax_nonce', 'metadata', 'attachment_id', 'context');
 
     $args = array(
@@ -119,14 +119,10 @@ class Sisa_ProLite
   {
     $image = null;
 
-    if ($this->is_pro) {
-      if (has_image_size('medium')) {
-        $image = wp_get_attachment_image_url($p, 'medium');
-      } else {
-        $image = wp_get_original_image_url($p);
-      }
+    if (has_image_size('medium')) {
+      $image = wp_get_attachment_image_url($p, 'medium');
     } else {
-      $image = wp_get_attachment_image_url($p);
+      $image = wp_get_original_image_url($p);
     }
 
     if ($image === false) {
@@ -143,4 +139,4 @@ class Sisa_ProLite
   }
 }
 
-$sisa_prolite = new Sisa_ProLite(Sisa::getInstance());
+$elim_prolite = new EnlightenedImages_ProLite(EnlightenedImages_Plugin::getInstance());

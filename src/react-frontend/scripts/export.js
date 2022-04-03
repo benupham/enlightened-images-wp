@@ -43,7 +43,7 @@ archive.glob("../../src/react-frontend/build/static/js/main.*.js.map", null)
 archive.glob("../../src/react-frontend/build/static/css/main.*.css", null)
 archive.glob("../../src/class-azure-client.php")
 archive.glob("../../src/class-pro-client.php")
-archive.glob("../../src/class-sisa-plugin.php")
+archive.glob("../../src/class-elim-plugin.php")
 archive.file(path.resolve(__dirname, "../../../enlightened-images.php"), {
   name: "enlightened-images.php"
 })

@@ -65,9 +65,9 @@ const Settings = ({ setNotice, estimate, count }) => {
     }
     if (json.options.isPro !== options.isPro) {
       if (json.options.isPro === 0) {
-        setNotice(["EnlightenedImages API key is invalid. Please check your account.", "error"])
+        setNotice(["Enlightened Images API key is invalid. Please check your account.", "error"])
       } else {
-        setNotice([`Options saved, using EnlightenedImages API key.`, "success"])
+        setNotice([`Options saved, using Enlightened Images API key.`, "success"])
       }
     }
 
@@ -120,18 +120,18 @@ const Settings = ({ setNotice, estimate, count }) => {
           <form onSubmit={updateOptions}>
             {options.isPro === 0 && (
               <div>
-                <h2>Setup A: Enter your EnlightenedImages API key</h2>
+                <h2>Setup A: Enter your Enlightened Images API key</h2>
                 <p>
-                  Purchase an EnlightenedImages API key on the EnlightenedImages website, then paste
-                  the key here and get started immediately.
+                  Purchase an Enlightened Images API key on the Enlightened Images website, then
+                  paste the key here and get started immediately.
                 </p>
               </div>
             )}
-            <table className="sisa-options-table form-table">
+            <table className="elim-options-table form-table">
               <tbody>
                 <tr>
                   <th scope="row">
-                    EnlightenedImages
+                    Enlightened Images
                     <br />
                     API Key
                   </th>
@@ -145,10 +145,10 @@ const Settings = ({ setNotice, estimate, count }) => {
                     />
                     <p>
                       <a
-                        href="https://enlightenedimageswp.com"
+                        href={`https://enlightenedimageswp.com/checkout/?count=${count}`}
                         target="_blank"
                         rel="noopener noreferrer">
-                        Get your EnlightenedImages API key here.
+                        Get your Enlightened Images API key here.
                       </a>
                     </p>
                   </td>
@@ -160,7 +160,7 @@ const Settings = ({ setNotice, estimate, count }) => {
                         <h2>Setup B: Enter your Microsoft Azure Computer Vision account details</h2>
                         <p>
                           If you want to use your own Microsoft Azure account instead of purchasing
-                          an EnlightenedImages key, you will need an Azure Computer Vision API key
+                          an Enlightened Images key, you will need an Azure Computer Vision API key
                           and endpoint. You can learn how to get these by going to the{" "}
                           <a
                             href="https://azure.microsoft.com/en-us/services/cognitive-services/computer-vision/#overview"

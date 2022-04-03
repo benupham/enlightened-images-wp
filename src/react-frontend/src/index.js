@@ -40,9 +40,9 @@ const App = (props) => {
   return (
     <>
       <h1>
-        <span className="enlightened">EnlightenedImages</span> Image Alt Text Generator
+        <span className="enlightened">Enlightened Images</span> Image Alt Text Generator
       </h1>
-      <div className="wrap sisa">
+      <div className="wrap elim">
         {notice.length > 0 && <Notice notice={notice} />}
         <Settings setNotice={setNotice} estimate={estimate} count={count} />
       </div>
@@ -60,7 +60,7 @@ const Notice = ({ notice }) => {
   )
 }
 
-const dashboardContainer = document.getElementById("sisa-dashboard")
+const dashboardContainer = document.getElementById("elim-dashboard")
 
 if (dashboardContainer) {
   ReactDOM.render(<App />, dashboardContainer)

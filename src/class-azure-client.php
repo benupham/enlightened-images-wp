@@ -1,6 +1,6 @@
 <?php
 
-class Sisa_Azure_Client
+class EnlightenedImages_Azure_Client
 {
 
     public function get_annotation($original_file)
@@ -10,8 +10,8 @@ class Sisa_Azure_Client
             return new WP_Error('bad_image_url', __("Image URL not readable. You'll need to manually add alt text."), $original_file);
         }
 
-        $apikey = get_option('sisa_api_key');
-        $endpoint_base = get_option('sisa_azure_endpoint');
+        $apikey = get_option('elim_api_key');
+        $endpoint_base = get_option('elim_azure_endpoint');
         $body = json_encode(array(
             'url' => $original_file,
         ));
@@ -41,7 +41,7 @@ class Sisa_Azure_Client
         error_log($response_message);
 
         if (200 != $response_code && !empty($data)) {
-            return new WP_Error($data->error->code, $data->error->message);
+            return new WP_Error($data->code, $data->message);
         }
         if (200 != $response_code && !empty($response_message)) {
             return new WP_Error($response_code, $response_message . ': ' . __("Uknown error. Make sure your images are publicly accessible and API key valid."));
