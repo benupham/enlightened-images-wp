@@ -1,10 +1,10 @@
 === Enlightened Images Alt Text Generator ===
 Contributors: bcupham
-Tags: alt, alt text, seo, accessibility
+Tags: image alt text, alt text, seo, accessibility
 Requires at least: 5.1.0
-Tested up to: 5.9.2
+Tested up to: 6.0
 Requires PHP: 7.0
-Stable tag: 1.1
+Stable tag: 1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,9 +12,9 @@ Generate image alt text automatically with machine learning.
 
 == Description ==
 
-Image alternative text (alt text or alt tag) is both a requirement for accessible websites and a key part of any website SEO strategy. It is strongly recommended every image on your website have an alt text description. However, most websites have dozens or hundreds of images that are missing alt text. Adding it manually is a huge pain. 
+Image alt text (alternative text or alt tag) is an accessibility requirement and important for website SEO (search engine optimization). It is strongly recommended every image on your website have an alt text description. However, most websites have dozens or hundreds of images that are missing alt text. Adding it manually is a huge pain and website users may forget to do so when they upload images to the Media Library. 
 
-The Enlightened Images plugin solves this problem by generating alt text automatically using a bulk tool. Run the Bulk Alt Text tool and generate alt text for all images missing it. 
+The Enlightened Images plugin is a bulk alt text generation tool. It solves the problem of missing alt text by generating alt text automatically. Run the Bulk Alt Text tool and generate image alt text using artificial intelligence for all images missing it. 
 
 == Features ==
 
@@ -56,5 +56,5 @@ Yes.
 
 == What Image File Types are Supported? ==
 
-Definitely png and jpg. As for webp, it's really not clear. We are using one Azure endpoint that appears to process webp. But another endpoint does not, and the documentation makes no mention of webp. So our recommendation is to send only jpg and png. If you use a plugin that generates webp for your images, the jpg/png version should still exist and be the one sent to Azure automatically. 
+Definitely png and jpg. As for webp, it's really not clear. We are using one Azure endpoint that appears to process webp. But another endpoint does not, and the (terrible) Microsoft documentation makes no mention of webp. So our recommendation is to send only jpg and png. But don't worry if you use a plugin that generates webp for your images, the jpg/png version should still exist and be the one sent to Azure automatically. 
 
