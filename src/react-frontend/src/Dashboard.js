@@ -45,6 +45,7 @@ export const Dashboard = ({ options }) => {
     setBulkRunning(true)
     let response = null
     let data = {}
+    console.log(pause.current)
 
     while (bulkRemaining.current > 0 && pause.current === false) {
       try {
@@ -88,6 +89,7 @@ export const Dashboard = ({ options }) => {
           `Stopping bulk annotation as the most recent batch was all errors. First error: ${errorMsg}`
         )
         pause.current = true
+        setPaused(true)
       }
     }
     setBulkRunning(false)
@@ -107,6 +109,7 @@ export const Dashboard = ({ options }) => {
     if (pause.current === true) {
       pause.current = false
       setPaused(false)
+      setErrorMessage("")
       bulkAnnotate()
     } else {
       pause.current = true
@@ -120,7 +123,7 @@ export const Dashboard = ({ options }) => {
       {options.isPro === 1 && (
         <>
           <h4 className="credits">
-            Credits Remaining: {stats.credits ? stats.credits : "loading..."}{" "}
+            Credits Remaining: {stats.credits !== null ? stats.credits : "loading..."}{" "}
             <a
               href="https://enlightenedimageswp.com/my-account/"
               className="buy-credits"

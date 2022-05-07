@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Enlightened Images
  * Description: Generate image alt text automatically with machine learning. 
- * Version: 1.0
+ * Version: 1.1
  * Author: Ben Upham
  * Text Domain: enlightenedimages
  * License: GPLv2 or later

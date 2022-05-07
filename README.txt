@@ -1,10 +1,10 @@
 === Enlightened Images Alt Text Generator ===
 Contributors: bcupham
-Tags: images, alt text, accessibility
+Tags: alt, alt text, seo, accessibility
 Requires at least: 5.1.0
 Tested up to: 5.9.2
 Requires PHP: 7.0
-Stable tag: 1.0
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Generate image alt text automatically with machine learning.
 
 == Description ==
 
-Image alternative text, or "alt text" is both a requirement for accessible websites and a key part of any website SEO strategy. It is strongly recommended every image on your website have an alt text description. However, most websites have dozens or hundreds of images that are missing alt text. Adding it manually is a huge pain. 
+Image alternative text (alt text or alt tag) is both a requirement for accessible websites and a key part of any website SEO strategy. It is strongly recommended every image on your website have an alt text description. However, most websites have dozens or hundreds of images that are missing alt text. Adding it manually is a huge pain. 
 
 The Enlightened Images plugin solves this problem by generating alt text automatically using a bulk tool. Run the Bulk Alt Text tool and generate alt text for all images missing it. 
 

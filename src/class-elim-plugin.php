@@ -213,16 +213,31 @@ class EnlightenedImages_Plugin
                 'before' => date('Y-m-d H:i:s', $now),
             ),
             'meta_query'  => array(
+                'relation' => 'AND',
                 array(
-                    'key' => '_wp_attachment_image_alt',
-                    'value' => '',
-                    'compare' => '='
+                    'relation' => 'OR',
+                    array(
+                        'key' => '_wp_attachment_image_alt',
+                        'value' => '',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => '_wp_attachment_image_alt',
+                        'compare' => 'NOT EXISTS'
+                    )
                 ),
                 array(
-                    'key' => '_wp_attachment_image_alt',
-                    'compare' => 'NOT EXISTS'
-                ),
-                'relation' => 'OR'
+                    'relation' => 'OR',
+                    array(
+                        'key' => 'elim_date',
+                        'value' => date('Y-m-d H:i:s', $now),
+                        'compare' => '!='
+                    ),
+                    array(
+                        'key' => 'elim_date',
+                        'compare' => 'NOT EXISTS'
+                    )
+                )
             ),
             'post_mime_type' => array('image/jpeg', 'image/gif', 'image/png', 'image/bmp'),
             'fields' => 'ids',
@@ -276,11 +291,13 @@ class EnlightenedImages_Plugin
 
             $image = null;
 
-            if ($image_metadata['sizes']['medium']['width'] >= 50 && $image_metadata['sizes']['medium']['height'] >= 50) {
+            if (isset($image_metadata['sizes']['medium']) && $image_metadata['sizes']['medium']['width'] >= 50 && $image_metadata['sizes']['medium']['height'] >= 50) {
                 $image = wp_get_attachment_image_url($p, 'medium');
             } else {
                 $image = wp_get_attachment_image_url($p, 'full');
             }
+
+            update_post_meta($p, 'elim_date', date('Y-m-d H:i:s', $now));
 
             if ($image === false) {
                 $response[] = new WP_Error('bad_image', __('Image filepath not found'));

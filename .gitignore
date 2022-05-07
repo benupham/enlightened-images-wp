@@ -11,3 +11,6 @@ node_modules
 *.png
 .env
 src/react-frontend/build/**
+class-sisa-old-pro-plugin.php
+class-sisa-wp-base.php
+class-gcv-client.php
