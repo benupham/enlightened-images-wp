@@ -58,3 +58,8 @@ Yes.
 
 Definitely png and jpg. As for webp, it's really not clear. We are using one Azure endpoint that appears to process webp. But another endpoint does not, and the (terrible) Microsoft documentation makes no mention of webp. So our recommendation is to send only jpg and png. But don't worry if you use a plugin that generates webp for your images, the jpg/png version should still exist and be the one sent to Azure automatically. 
 
+== Changelog == 
+
+= 1.2 =
+* Tested up to WordPress 6.0
+* Checks for non-existing alt text, not just empty. 
