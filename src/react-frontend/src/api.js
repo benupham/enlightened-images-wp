@@ -8,7 +8,9 @@ export const checkApi = async (apiKey, apiEndpoint) =>
   fetch(apiEndpoint + "/vision/v3.1/describe", {
     method: "POST",
     headers: {
-      "Ocp-Apim-Subscription-Key": apiKey
+      "Ocp-Apim-Subscription-Key": apiKey,
+      "Content-Type": "application/json",
+      Accept: "application/json"
     }
   })
     .then((response) => response.json())

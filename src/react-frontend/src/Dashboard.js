@@ -26,12 +26,18 @@ export const Dashboard = ({ options }) => {
 
     try {
       response = await fetch(urls.proxy, {
-        headers: new Headers({ "X-WP-Nonce": nonce, "Cache-Control": "no-cache" })
+        headers: new Headers({
+          "X-WP-Nonce": nonce,
+          "Cache-Control": "no-cache",
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        })
       })
       const json = await response.json()
       data = json.body
       console.log("prepbulk data", data)
     } catch (error) {
+      console.log(`the error ${error}`)
       setErrorMessage(error)
     }
     setStats({ total: data.count, errors: 0, remaining: data.count, credits: data.credits })
@@ -53,7 +59,12 @@ export const Dashboard = ({ options }) => {
 
         console.log(`${urls.proxy}?start=${startTime}`)
         response = await fetch(`${urls.proxy}?start=${startTime}`, {
-          headers: new Headers({ "X-WP-Nonce": nonce, "Cache-Control": "no-cache" })
+          headers: new Headers({
+            "X-WP-Nonce": nonce,
+            "Cache-Control": "no-cache",
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          })
         })
         const json = await response.json()
         data = json.body

@@ -4,7 +4,7 @@ Tags: image alt text, alt text, seo, accessibility
 Requires at least: 5.1.0
 Tested up to: 6.0
 Requires PHP: 7.0
-Stable tag: 1.2
+Stable tag: 1.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,10 @@ Yes.
 Definitely png and jpg. As for webp, it's really not clear. We are using one Azure endpoint that appears to process webp. But another endpoint does not, and the (terrible) Microsoft documentation makes no mention of webp. So our recommendation is to send only jpg and png. But don't worry if you use a plugin that generates webp for your images, the jpg/png version should still exist and be the one sent to Azure automatically. 
 
 == Changelog == 
+
+= 1.3 =
+* Handles Azure free-tier rate-limit error.
+* Handles WP_DEBUG mode messing with API endpoint. 
 
 = 1.2 =
 * Tested up to WordPress 6.0

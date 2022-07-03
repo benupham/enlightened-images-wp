@@ -6,8 +6,8 @@ class EnlightenedImages_Azure_Client
     public function get_annotation($original_file)
     {
 
-        if (!file_get_contents($original_file)) {
-            return new WP_Error('bad_image_url', __("Image URL not readable. You'll need to manually add alt text."), $original_file);
+        if (false === file_get_contents($original_file)) {
+            return new WP_Error('bad_image_url', __("Image file not readable. You'll need to manually add alt text."), $original_file);
         }
 
         $apikey = get_option('elim_api_key');
@@ -40,10 +40,13 @@ class EnlightenedImages_Azure_Client
         error_log($response_code);
         error_log($response_message);
 
+        if (200 != $response_code && !empty($data) && !empty($data->error)) {
+            return new WP_Error($data->error->code, $data->error->message);
+        }
         if (200 != $response_code && !empty($data)) {
             return new WP_Error($data->code, $data->message);
         }
-        if (200 != $response_code && !empty($response_message)) {
+        if (200 != $response_code) {
             return new WP_Error($response_code, $response_message . ': ' . __("Uknown error. Make sure your images are publicly accessible and API key valid."));
         }
 
