@@ -24,6 +24,7 @@ const Settings = ({ setNotice, estimate, count }) => {
   const [isGetting, setGetting] = useState(true)
   const [isOpen, setOpen] = useState(false)
 
+  // TODO: Move to separate file. Custom hook? 
   const updateOptions = async (event) => {
     setNotice("")
     event.preventDefault()
@@ -112,7 +113,7 @@ const Settings = ({ setNotice, estimate, count }) => {
     const optionValue = value === true ? 1 : value === false ? 0 : value
     setOptions((prev) => ({ ...prev, [name]: optionValue }))
   }
-
+  // TODO: Move hasPro settings to separate file. 
   return (
     <div className="settings">
       <div className="dashboard">

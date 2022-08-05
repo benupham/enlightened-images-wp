@@ -9,6 +9,7 @@ const App = (props) => {
   const [notice, setNotice] = useState([])
   const [estimate, setEstimate] = useState()
   const [count, setCount] = useState()
+  
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [notice])
@@ -50,6 +51,7 @@ const App = (props) => {
   )
 }
 
+// TODO: useContext to make notice, notice type available globally
 const Notice = ({ notice }) => {
   const [message, type] = notice
   const classList = type === "success" ? "notice notice-success" : "error settings-error"
